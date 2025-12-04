@@ -502,7 +502,7 @@ async callGemini(text) {
         throw new Error('API Key 为空，请先在“设置”页保存有效的 Key。');
     }
 
-    // 2. 和你 curl 一模一样的 endpoint（模型 + 路径）
+    // 2. 和你 curl 一模一样的 endpoint（2.0 flash）
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
     const payload = {
@@ -515,7 +515,7 @@ async callGemini(text) {
         ]
     };
 
-    // 3. 和 curl 一样，用 X-goog-api-key 头，不用 ?key=
+    // 3. 用 X-goog-api-key 头，不用 ?key=
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -525,11 +525,12 @@ async callGemini(text) {
         body: JSON.stringify(payload)
     });
 
-    // 4. 把原始返回先读出来，方便看错误信息
+    // 4. 先把原始返回读出来，这样 400 时你能看到 message
     const raw = await response.text();
 
     if (!response.ok) {
-        // 这里会带上服务器返回的完整 JSON，出错时 alert 里能看到原因
+        // 以后 alert 里应该能看到类似：
+        // API Error 400: {"error":{"code":400,"message":"XXXX","status":"INVALID_ARGUMENT"}}
         throw new Error(`API Error ${response.status}: ${raw}`);
     }
 
