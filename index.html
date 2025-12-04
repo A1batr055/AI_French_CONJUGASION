@@ -1,592 +1,456 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI法语变位大师 (Gemini版)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body { 
-            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif; 
-            background: radial-gradient(circle at top left, #ecfdf5, #e0f2fe, #f9fafb);
-        }
-        /* 防止在预览/脚本未执行时显示 {{}} 占位符 */
-        [v-cloak] { display: none; }
-
-        .shake { animation: shake 0.5s; }
-        @keyframes shake { 
-            0% { transform: translateX(0); } 
-            25% { transform: translateX(-5px); } 
-            50% { transform: translateX(5px); } 
-            75% { transform: translateX(-5px); } 
-            100% { transform: translateX(0); } 
-        }
-        .loader { 
-            border: 4px solid #f3f3f3; 
-            border-top: 4px solid #10b981; 
-            border-radius: 50%; 
-            width: 30px; 
-            height: 30px; 
-            animation: spin 1s linear infinite; 
-        }
-        @keyframes spin { 
-            0% { transform: rotate(0deg); } 
-            100% { transform: rotate(360deg); } 
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI法语变位大师 (Gemini版)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body{
+      font-family:'Segoe UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+      background: radial-gradient(circle at 10% 0%,#ecfdf5 0,#e0f2fe 40%,#f9fafb 100%);
+    }
+    [v-cloak]{display:none;}
+    .shake{animation:shake .5s;}
+    @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-5px)}100%{transform:translateX(0)}}
+    .loader{border:4px solid #f3f3f3;border-top:4px solid #10b981;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite}
+    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+  </style>
 </head>
 <body class="text-gray-800 h-screen flex flex-col overflow-hidden">
 
 <div id="app" v-cloak class="h-full flex flex-col">
-    
-    <!-- 顶部导航：极简半透明风格 -->
-    <nav class="bg-white/80 backdrop-blur border-b border-emerald-50 text-gray-900 py-3 shadow-sm z-10">
-        <div class="max-w-5xl mx-auto flex justify-between items-center px-3 md:px-0">
-            <h1 class="text-base md:text-lg font-semibold tracking-tight flex items-center gap-2 text-emerald-700">
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700">
-                    <i class="fas fa-brain text-sm"></i>
-                </span>
-                <span class="flex flex-col leading-snug">
-                    <span>AI Conjugaison</span>
-                    <span class="text-[11px] text-gray-400 font-normal hidden sm:block">Gemini · 法语变位助手</span>
-                </span>
-            </h1>
-            <div class="text-xs md:text-sm flex gap-4 items-center">
-                <button 
-                    @click="currentView = 'settings'" 
-                    :class="[
-                        'pb-1 border-b-2 transition-colors',
-                        currentView === 'settings' 
-                            ? 'border-emerald-500 text-emerald-700 font-semibold' 
-                            : 'border-transparent text-gray-400 hover:text-gray-700'
-                    ]">
-                    设置 & Key
-                </button>
-                <button 
-                    @click="currentView = 'library'" 
-                    :class="[
-                        'pb-1 border-b-2 transition-colors',
-                        currentView === 'library' 
-                            ? 'border-emerald-500 text-emerald-700 font-semibold' 
-                            : 'border-transparent text-gray-400 hover:text-gray-700'
-                    ]">
-                    词库
-                </button>
-                <button 
-                    @click="currentView = 'practice'" 
-                    :class="[
-                        'pb-1 border-b-2 transition-colors',
-                        currentView === 'practice' 
-                            ? 'border-emerald-500 text-emerald-700 font-semibold' 
-                            : 'border-transparent text-gray-400 hover:text-gray-700'
-                    ]">
-                    练习
-                </button>
-            </div>
-        </div>
-    </nav>
-
-    <main class="flex-grow overflow-y-auto py-6 px-4">
-        <div class="max-w-5xl mx-auto h-full relative">
-            
-            <!-- 全局 loading 遮罩 -->
-            <div v-if="loading" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-2xl">
-                <div class="loader mb-4"></div>
-                <p class="text-emerald-600 font-semibold animate-pulse tracking-wide text-sm">{{ loadingText }}</p>
-            </div>
-
-            <!-- 设置页面 -->
-            <div 
-                v-if="currentView === 'settings'" 
-                class="max-w-lg mx-auto bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 mt-10 p-6 md:p-8 flex flex-col gap-4">
-                <div class="flex items-center justify-between mb-2">
-                    <h2 class="text-xl font-semibold text-gray-900 tracking-tight">系统设置</h2>
-                    <span class="text-[11px] uppercase tracking-[0.16em] text-gray-400">Gemini API</span>
-                </div>
-                <p class="text-xs text-gray-500">
-                    在本地浏览器中安全存储你的 API Key，用于生成练习题和变位表。
-                </p>
-                <div class="mt-2">
-                    <label class="block text-xs font-medium text-gray-500 mb-1.5">Gemini API Key</label>
-                    <input 
-                        type="password" 
-                        v-model="apiKey" 
-                        placeholder="在此粘贴你的 Google API Key" 
-                        class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80"
-                    >
-                    <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">
-                        · Key 仅存储在你的本地浏览器缓存中，不会上传到任何服务器。<br>
-                        · <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-emerald-600 underline underline-offset-2">点击这里获取 API Key</a>
-                    </p>
-                </div>
-                <button 
-                    @click="saveSettings" 
-                    class="mt-4 w-full bg-emerald-600 text-white py-2.5 rounded-xl hover:bg-emerald-700 text-sm font-medium tracking-wide transition flex items-center justify-center gap-2">
-                    <i class="fas fa-save text-xs"></i>
-                    <span>保存设置并进入词库</span>
-                </button>
-            </div>
-
-            <!-- 词库页面 -->
-            <div v-if="currentView === 'library'" class="max-w-4xl mx-auto flex flex-col gap-6">
-                <div class="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 p-4 md:p-5 mt-4 flex flex-col gap-3">
-                    <div class="flex items-baseline justify-between">
-                        <h2 class="text-lg font-semibold text-gray-900">我的动词词库</h2>
-                        <span class="text-[11px] text-gray-400">点击卡片可查看变位</span>
-                    </div>
-                    <div class="flex gap-2 mt-1">
-                        <input 
-                            v-model="newVerb" 
-                            @keyup.enter="addVerb" 
-                            placeholder="输入动词（如：s'asseoir, peindre）" 
-                            class="flex-grow text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80"
-                        >
-                        <button 
-                            @click="addVerb" 
-                            class="px-4 md:px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-black transition whitespace-nowrap">
-                            添加
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pb-6">
-                    <div 
-                        v-for="(v, idx) in verbLibrary" 
-                        :key="idx" 
-                        class="bg-white/70 backdrop-blur border border-gray-100 hover:border-emerald-200 p-3 rounded-2xl shadow-sm hover:shadow-md cursor-pointer flex justify-between items-center group transition-all">
-                        <button 
-                            class="flex-1 text-left"
-                            @click="showConjugationTable(v)">
-                            <span class="block font-semibold text-gray-800 text-sm truncate">{{ v }}</span>
-                        </button>
-                        <button 
-                            @click.stop="removeVerb(idx)" 
-                            class="ml-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
-                            <i class="fas fa-trash text-xs"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 练习页面 -->
-            <div v-if="currentView === 'practice'" class="max-w-3xl mx-auto h-full flex flex-col">
-                
-                <!-- 练习配置卡片 -->
-                <div 
-                    v-if="!isPracticeActive" 
-                    class="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 mt-10 p-6 md:p-8">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h2 class="text-xl font-semibold text-gray-900 tracking-tight">生成练习配置</h2>
-                            <p class="text-xs text-gray-500 mt-1">选择水平和时态，由 AI 自动生成填空题。</p>
-                        </div>
-                        <span class="hidden sm:inline-flex text-[11px] uppercase tracking-[0.2em] text-gray-400">Practice</span>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4 mb-6">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1.5">语言水平（CEFR）</label>
-                            <select 
-                                v-model="settings.level" 
-                                class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
-                                <option v-for="l in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']" :value="l">{{ l }}</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1.5">练习时态</label>
-                            <select 
-                                v-model="settings.tense" 
-                                class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
-                                <option value="Présent">Présent（现在时）</option>
-                                <option value="Passé Composé">Passé Composé（复合过去）</option>
-                                <option value="Imparfait">Imparfait（未完成过去）</option>
-                                <option value="Futur Simple">Futur Simple（简单将来）</option>
-                                <option value="Subjonctif Présent">Subjonctif（虚拟式）</option>
-                                <option value="Conditionnel Présent">Conditionnel（条件式）</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-6">
-                        <label class="block text-xs font-medium text-gray-500 mb-1.5">动词来源</label>
-                        <div class="flex flex-col sm:flex-row gap-3 text-sm">
-                            <label class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border" 
-                                   :class="settings.mode === 'library' ? 'border-emerald-400 bg-emerald-50/60 text-emerald-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'">
-                                <input type="radio" v-model="settings.mode" value="library" class="accent-emerald-600">
-                                <span>我的词库随机</span>
-                            </label>
-                            <label class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border" 
-                                   :class="settings.mode === 'random_ai' ? 'border-emerald-400 bg-emerald-50/60 text-emerald-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'">
-                                <input type="radio" v-model="settings.mode" value="random_ai" class="accent-emerald-600">
-                                <span>AI 推荐高频词</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <button 
-                        @click="startPracticeSession" 
-                        :disabled="!apiKey" 
-                        class="w-full py-3 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center gap-2"
-                        :class="apiKey 
-                            ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
-                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'">
-                        <i class="fas fa-magic text-xs" v-if="apiKey"></i>
-                        <span>
-                            {{ apiKey ? '生成题目（调用 AI）' : '请先在“设置”中输入 API Key' }}
-                        </span>
-                    </button>
-                </div>
-
-                <!-- 练习卡片 -->
-                <div 
-                    v-else 
-                    class="flex flex-col h-full justify-center mt-6 mb-8">
-                    <div class="bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-emerald-50 p-6 md:p-8 relative min-h-[360px] flex flex-col justify-between">
-                        <div class="flex justify-between text-xs text-gray-400 mb-6 border-b border-gray-100 pb-2">
-                            <span class="inline-flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                <span>{{ settings.tense }} · {{ settings.level }}</span>
-                            </span>
-                            <span>题目 {{ currentIndex + 1 }} / {{ sessionCards.length }}</span>
-                        </div>
-
-                        <div class="text-center px-2">
-                            <div class="text-2xl md:text-3xl font-semibold text-emerald-800 mb-1 tracking-tight">{{ currentCard.verb }}</div>
-                            <div class="text-xs text-gray-500 mb-6">请填写空格中的正确变位形式</div>
-
-                            <div class="text-lg md:text-xl leading-relaxed mb-6 font-medium text-gray-800">
-                                <span v-html="currentCard.prefix"></span>
-                                <input 
-                                    ref="answerInput"
-                                    v-model="userInput"
-                                    @keyup.enter="checkAnswer"
-                                    :class="{
-                                        'border-red-500 bg-red-50 text-red-600 shake': feedback.status === 'wrong',
-                                        'border-emerald-500 bg-emerald-50 text-emerald-700': feedback.status === 'correct',
-                                        'border-gray-300 bg-gray-50/80': feedback.status === 'neutral'
-                                    }"
-                                    class="border-b-2 outline-none text-center mx-1 w-40 px-1 font-mono font-semibold bg-transparent transition-all text-base md:text-lg py-0.5"
-                                    autocomplete="off"
-                                >
-                                <span v-html="currentCard.suffix"></span>
-                            </div>
-
-                            <div class="inline-flex items-center gap-2 text-gray-500 italic text-[13px] mt-2 bg-gray-50/80 px-3 py-2 rounded-full">
-                                <i class="fas fa-language text-xs text-gray-400"></i>
-                                <span>"{{ currentCard.translation }}"</span>
-                            </div>
-                        </div>
-
-                        <div class="mt-6 h-14 text-center flex flex-col items-center justify-center gap-1">
-                            <div v-if="feedback.status === 'wrong'" class="text-red-500 text-sm flex items-center gap-2">
-                                <i class="fas fa-times-circle text-sm"></i> 
-                                <span>不对，再想想。剩余机会：{{ 3 - feedback.attempts }}</span>
-                            </div>
-                            <div v-if="feedback.showAnswer" class="text-orange-600 text-sm">
-                                正确答案：<span class="font-semibold">{{ currentCard.answer }}</span>
-                            </div>
-                            <div v-if="feedback.status === 'correct'" class="text-emerald-500 font-semibold text-base flex items-center gap-2">
-                                <i class="fas fa-check-circle text-lg"></i> 
-                                <span>Très bien !</span>
-                            </div>
-                        </div>
-
-                        <div class="mt-4 flex flex-col sm:flex-row gap-3">
-                            <button 
-                                v-if="feedback.status !== 'correct'" 
-                                @click="checkAnswer" 
-                                class="flex-1 bg-gray-900 text-white py-2.5 rounded-xl shadow-sm hover:bg-black text-sm font-medium transition">
-                                提交答案
-                            </button>
-                            <button 
-                                v-else 
-                                class="flex-1 bg-emerald-500 text-white py-2.5 rounded-xl text-sm font-medium cursor-wait opacity-80 flex items-center justify-center gap-2">
-                                <span class="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
-                                <span>加载下一题...</span>
-                            </button>
-                            <button 
-                                @click="endPractice" 
-                                class="sm:w-28 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-500 hover:border-gray-300 hover:bg-gray-50 flex items-center justify-center gap-1 transition">
-                                <i class="fas fa-xmark text-xs"></i>
-                                <span>结束练习</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </main>
-
-    <!-- 变位表模态框 -->
-    <div 
-        v-if="showModal" 
-        class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" 
-        @click.self="showModal = false">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-gray-100">
-            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-2xl">
-                <div class="flex flex-col">
-                    <h3 class="text-lg font-semibold text-gray-900">变位表 · {{ modalVerb }}</h3>
-                    <span class="text-[11px] text-gray-400 mt-0.5">Présent / Passé Composé / Imparfait / Futur Simple</span>
-                </div>
-                <button @click="showModal = false" class="text-gray-400 hover:text-gray-700 transition">
-                    <i class="fas fa-times text-sm"></i>
-                </button>
-            </div>
-            <div class="p-4 md:p-6 overflow-y-auto prose max-w-none text-sm" v-html="modalContent"></div>
-        </div>
+  <!-- 顶部导航 -->
+  <nav class="bg-white/80 backdrop-blur border-b border-emerald-50 text-gray-900 py-3 shadow-sm z-10">
+    <div class="max-w-5xl mx-auto flex justify-between items-center px-3 md:px-0">
+      <h1 class="text-base md:text-lg font-semibold tracking-tight flex items-center gap-2 text-emerald-700">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700">
+          <i class="fas fa-brain text-sm"></i>
+        </span>
+        <span class="flex flex-col leading-snug">
+          <span>AI Conjugaison</span>
+          <span class="text-[11px] text-gray-400 font-normal hidden sm:block">Gemini · 法语变位助手</span>
+        </span>
+      </h1>
+      <div class="text-xs md:text-sm flex gap-4 items-center">
+        <button @click="currentView='settings'"
+                :class="['pb-1 border-b-2 transition-colors',currentView==='settings'?'border-emerald-500 text-emerald-700 font-semibold':'border-transparent text-gray-400 hover:text-gray-700']">
+          设置 & Key
+        </button>
+        <button @click="currentView='library'"
+                :class="['pb-1 border-b-2 transition-colors',currentView==='library'?'border-emerald-500 text-emerald-700 font-semibold':'border-transparent text-gray-400 hover:text-gray-700']">
+          词库
+        </button>
+        <button @click="currentView='practice'"
+                :class="['pb-1 border-b-2 transition-colors',currentView==='practice'?'border-emerald-500 text-emerald-700 font-semibold':'border-transparent text-gray-400 hover:text-gray-700']">
+          练习
+        </button>
+      </div>
     </div>
+  </nav>
 
+  <main class="flex-grow overflow-y-auto py-6 px-4">
+    <div class="max-w-5xl mx-auto h-full relative">
+      <!-- 全局 Loading -->
+      <div v-if="loading" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-2xl">
+        <div class="loader mb-4"></div>
+        <p class="text-emerald-600 font-semibold animate-pulse tracking-wide text-sm">{{ loadingText }}</p>
+      </div>
+
+      <!-- 设置 -->
+      <div v-if="currentView==='settings'"
+           class="max-w-lg mx-auto bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 mt-10 p-6 md:p-8 flex flex-col gap-4">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xl font-semibold text-gray-900 tracking-tight">系统设置</h2>
+          <span class="text-[11px] uppercase tracking-[0.16em] text-gray-400">Gemini API</span>
+        </div>
+        <p class="text-xs text-gray-500">在本地浏览器中安全存储你的 API Key，用于生成练习题和变位表。</p>
+        <div class="mt-2">
+          <label class="block text-xs font-medium text-gray-500 mb-1.5">Gemini API Key</label>
+          <input type="password" v-model="apiKey" placeholder="在此粘贴你的 Google API Key"
+                 class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
+          <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">
+            · Key 仅存储在你的本地浏览器缓存中，不会上传到任何服务器。<br>
+            · <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-emerald-600 underline underline-offset-2">点击这里获取 API Key</a>
+          </p>
+        </div>
+        <button @click="saveSettings"
+                class="mt-4 w-full bg-emerald-600 text-white py-2.5 rounded-xl hover:bg-emerald-700 text-sm font-medium tracking-wide transition flex items-center justify-center gap-2">
+          <i class="fas fa-save text-xs"></i><span>保存设置并进入词库</span>
+        </button>
+      </div>
+
+      <!-- 词库 -->
+      <div v-if="currentView==='library'" class="max-w-4xl mx-auto flex flex-col gap-6">
+        <div class="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 p-4 md:p-5 mt-4 flex flex-col gap-3">
+          <div class="flex items-baseline justify-between">
+            <h2 class="text-lg font-semibold text-gray-900">我的动词词库</h2>
+            <span class="text-[11px] text-gray-400">点击卡片可查看变位</span>
+          </div>
+          <div class="flex gap-2 mt-1">
+            <input v-model="newVerb" @keyup.enter="addVerb" placeholder="输入动词（如：s'asseoir, peindre）"
+                   class="flex-grow text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
+            <button @click="addVerb" class="px-4 md:px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-black transition whitespace-nowrap">
+              添加
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pb-6">
+          <div v-for="(v, idx) in verbLibrary" :key="idx"
+               class="bg-white/70 backdrop-blur border border-gray-100 hover:border-emerald-200 p-3 rounded-2xl shadow-sm hover:shadow-md cursor-pointer flex justify-between items-center group transition-all">
+            <button class="flex-1 text-left" @click="showConjugationTable(v)">
+              <span class="block font-semibold text-gray-800 text-sm truncate">{{ v }}</span>
+            </button>
+            <button @click.stop="removeVerb(idx)" class="ml-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
+              <i class="fas fa-trash text-xs"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 练习 -->
+      <div v-if="currentView==='practice'" class="max-w-3xl mx-auto h-full flex flex-col">
+        <!-- 配置 -->
+        <div v-if="!isPracticeActive" class="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 mt-10 p-6 md:p-8">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-900 tracking-tight">生成练习配置</h2>
+              <p class="text-xs text-gray-500 mt-1">选择水平和时态，由 AI 自动生成填空题。</p>
+            </div>
+            <span class="hidden sm:inline-flex text-[11px] uppercase tracking-[0.2em] text-gray-400">Practice</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1.5">语言水平（CEFR）</label>
+              <select v-model="settings.level"
+                      class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
+                <option v-for="l in ['A1','A2','B1','B2','C1','C2']" :value="l">{{ l }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1.5">练习时态</label>
+              <select v-model="settings.tense"
+                      class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
+                <option value="Présent">Présent（现在时）</option>
+                <option value="Passé Composé">Passé Composé（复合过去）</option>
+                <option value="Imparfait">Imparfait（未完成过去）</option>
+                <option value="Futur Simple">Futur Simple（简单将来）</option>
+                <option value="Subjonctif Présent">Subjonctif（虚拟式）</option>
+                <option value="Conditionnel Présent">Conditionnel（条件式）</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">动词来源</label>
+            <div class="flex flex-col sm:flex-row gap-3 text-sm">
+              <label class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border"
+                     :class="settings.mode==='library'?'border-emerald-400 bg-emerald-50/60 text-emerald-700':'border-gray-200 text-gray-600 hover:border-gray-300'">
+                <input type="radio" v-model="settings.mode" value="library" class="accent-emerald-600">
+                <span>我的词库随机</span>
+              </label>
+              <label class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border"
+                     :class="settings.mode==='random_ai'?'border-emerald-400 bg-emerald-50/60 text-emerald-700':'border-gray-200 text-gray-600 hover:border-gray-300'">
+                <input type="radio" v-model="settings.mode" value="random_ai" class="accent-emerald-600">
+                <span>AI 推荐高频词</span>
+              </label>
+            </div>
+          </div>
+
+          <button @click="startPracticeSession" :disabled="!apiKey"
+                  class="w-full py-3 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center gap-2"
+                  :class="apiKey?'bg-emerald-600 text-white hover:bg-emerald-700':'bg-gray-200 text-gray-500 cursor-not-allowed'">
+            <i class="fas fa-magic text-xs" v-if="apiKey"></i>
+            <span>{{ apiKey?'生成题目（调用 AI）':'请先在“设置”中输入 API Key' }}</span>
+          </button>
+        </div>
+
+        <!-- 练习卡片 -->
+        <div v-else class="flex flex-col h-full justify-center mt-6 mb-8">
+          <div class="bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-emerald-50 p-6 md:p-8 relative min-h-[360px] flex flex-col justify-between">
+            <div class="flex justify-between text-xs text-gray-400 mb-6 border-b border-gray-100 pb-2">
+              <span class="inline-flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span>{{ settings.tense }} · {{ settings.level }}</span></span>
+              <span>题目 {{ currentIndex + 1 }} / {{ sessionCards.length }}</span>
+            </div>
+
+            <div class="text-center px-2">
+              <div class="text-2xl md:text-3xl font-semibold text-emerald-800 mb-1 tracking-tight">{{ currentCard.verb }}</div>
+              <div class="text-xs text-gray-500 mb-6">请填写空格中的正确变位形式</div>
+
+              <div class="text-lg md:text-xl leading-relaxed mb-6 font-medium text-gray-800">
+                <span v-html="currentCard.prefix"></span>
+                <input ref="answerInput" v-model="userInput" @keyup.enter="checkAnswer"
+                       :class="{
+                         'border-red-500 bg-red-50 text-red-600 shake': feedback.status==='wrong',
+                         'border-emerald-500 bg-emerald-50 text-emerald-700': feedback.status==='correct',
+                         'border-gray-300 bg-gray-50/80': feedback.status==='neutral'
+                       }"
+                       class="border-b-2 outline-none text-center mx-1 w-40 px-1 font-mono font-semibold bg-transparent transition-all text-base md:text-lg py-0.5"
+                       autocomplete="off">
+                <span v-html="currentCard.suffix"></span>
+              </div>
+
+              <div class="inline-flex items-center gap-2 text-gray-500 italic text-[13px] mt-2 bg-gray-50/80 px-3 py-2 rounded-full">
+                <i class="fas fa-language text-xs text-gray-400"></i><span>"{{ currentCard.translation }}"</span>
+              </div>
+            </div>
+
+            <div class="mt-6 h-14 text-center flex flex-col items-center justify-center gap-1">
+              <div v-if="feedback.status==='wrong'" class="text-red-500 text-sm flex items-center gap-2"><i class="fas fa-times-circle text-sm"></i><span>不对，再想想。剩余机会：{{ 3 - feedback.attempts }}</span></div>
+              <div v-if="feedback.showAnswer" class="text-orange-600 text-sm">正确答案：<span class="font-semibold">{{ currentCard.answer }}</span></div>
+              <div v-if="feedback.status==='correct'" class="text-emerald-500 font-semibold text-base flex items-center gap-2"><i class="fas fa-check-circle text-lg"></i><span>Très bien !</span></div>
+            </div>
+
+            <div class="mt-4 flex flex-col sm:flex-row gap-3">
+              <button v-if="feedback.status!=='correct'" @click="checkAnswer"
+                      class="flex-1 bg-gray-900 text-white py-2.5 rounded-xl shadow-sm hover:bg-black text-sm font-medium transition">提交答案</button>
+              <button v-else class="flex-1 bg-emerald-500 text-white py-2.5 rounded-xl text-sm font-medium cursor-wait opacity-80 flex items-center justify-center gap-2">
+                <span class="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin"></span><span>加载下一题...</span>
+              </button>
+              <button @click="endPractice"
+                      class="sm:w-28 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-500 hover:border-gray-300 hover:bg-gray-50 flex items-center justify-center gap-1 transition">
+                <i class="fas fa-xmark text-xs"></i><span>结束练习</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- 变位表模态框 -->
+  <div v-if="showModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" @click.self="showModal=false">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-gray-100">
+      <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-2xl">
+        <div class="flex flex-col">
+          <h3 class="text-lg font-semibold text-gray-900">变位表 · {{ modalVerb }}</h3>
+          <span class="text-[11px] text-gray-400 mt-0.5">Présent / Passé Composé / Imparfait / Futur Simple</span>
+        </div>
+        <button @click="showModal=false" class="text-gray-400 hover:text-gray-700 transition"><i class="fas fa-times text-sm"></i></button>
+      </div>
+      <!-- 直接用 v-html 输出真正的 HTML 表格 -->
+      <div class="p-4 md:p-6 overflow-y-auto prose max-w-none text-sm" v-html="modalContent"></div>
+    </div>
+  </div>
 </div>
 
 <script>
-    const { createApp } = Vue;
+const { createApp } = Vue;
 
-    createApp({
-        data() {
-            return {
-                currentView: 'settings',
-                apiKey: localStorage.getItem('gemini_api_key') || '',
-                loading: false,
-                loadingText: '',
-                
-                // 词库
-                newVerb: '',
-                verbLibrary: JSON.parse(localStorage.getItem('verb_library')) || ['aimer', 'finir', 'être', 'avoir', 'aller', 'faire', 'pouvoir', 'savoir'],
-                
-                // 练习
-                isPracticeActive: false,
-                settings: {
-                    level: 'A2',
-                    tense: 'Présent',
-                    mode: 'library' // library or random_ai
-                },
-                sessionCards: [], // 预加载的卡片队列
-                currentIndex: 0,
-                
-                // 当前卡片状态
-                userInput: '',
-                feedback: { status: 'neutral', attempts: 0, showAnswer: false },
-                
-                // 模态框
-                showModal: false,
-                modalVerb: '',
-                modalContent: ''
-            }
+createApp({
+  data(){
+    return {
+      currentView:'settings',
+      apiKey: localStorage.getItem('gemini_api_key') || '',
+      loading:false,
+      loadingText:'',
+      newVerb:'',
+      verbLibrary: JSON.parse(localStorage.getItem('verb_library')) || ['aimer','finir','être','avoir','aller','faire','pouvoir','savoir'],
+      isPracticeActive:false,
+      settings:{ level:'A2', tense:'Présent', mode:'library' },
+      sessionCards:[],
+      currentIndex:0,
+      userInput:'',
+      feedback:{ status:'neutral', attempts:0, showAnswer:false },
+      showModal:false,
+      modalVerb:'',
+      modalContent:''
+    }
+  },
+  computed:{
+    currentCard(){
+      return this.sessionCards[this.currentIndex] || { prefix:'', suffix:'', verb:'', answer:'', translation:'' };
+    }
+  },
+  methods:{
+    // 工具：清理代码围栏
+    stripCodeFences(str=''){
+      return String(str).replace(/^```[\s\S]*?\n/,'').replace(/```$/,'').trim();
+    },
+    // 工具：反转义 HTML 实体（把 &lt; 变回 <）
+    decodeHTMLEntities(str=''){
+      const ta = document.createElement('textarea');
+      ta.innerHTML = str;
+      return ta.value;
+    },
+
+    saveSettings(){
+      localStorage.setItem('gemini_api_key', this.apiKey.trim());
+      alert('API Key 已保存');
+      this.currentView = 'library';
+    },
+    addVerb(){
+      const v = (this.newVerb || '').trim();
+      if(v && !this.verbLibrary.includes(v)){
+        this.verbLibrary.push(v);
+        this.saveLibrary();
+        this.newVerb='';
+      }
+    },
+    removeVerb(idx){
+      this.verbLibrary.splice(idx,1);
+      this.saveLibrary();
+    },
+    saveLibrary(){
+      localStorage.setItem('verb_library', JSON.stringify(this.verbLibrary));
+    },
+
+    // 生成练习
+    async startPracticeSession(){
+      if(!this.apiKey) return alert('请输入 API Key');
+      this.loading = true;
+      this.loadingText = '正在让 AI 生成题目...';
+
+      let targetVerbs=[];
+      if(this.settings.mode==='library'){
+        targetVerbs = this.verbLibrary.slice().sort(()=>0.5-Math.random()).slice(0,5);
+      }else{
+        targetVerbs = ['AI_AUTO_GENERATE'];
+      }
+
+      const prompt = `
+You are a strict French teacher. Create a JSON array of 5 fill-in-the-blank exercises.
+Target Level: ${this.settings.level} (CEFR).
+Target Tense: ${this.settings.tense}.
+Verbs: ${this.settings.mode==='library' ? targetVerbs.join(', ') : 'Choose 5 high-frequency verbs appropriate for '+this.settings.level}.
+
+Strictly follow this JSON format (no markdown code blocks, just raw json):
+[
+  {
+    "verb": "infinitive_verb",
+    "answer": "conjugated_verb_only",
+    "prefix": "sentence_part_before_verb",
+    "suffix": "sentence_part_after_verb",
+    "translation": "chinese_translation_of_sentence"
+  }
+]
+
+Requirements:
+1. The 'answer' must be the strictly correct conjugation of the verb in the specified tense.
+2. The sentence complexity must match ${this.settings.level}.
+3. Do not include the subject in the 'answer' unless it's an impersonal verb that requires it, usually the subject is in the prefix.
+4. Ensure correct elision in prefix (e.g., "J'" instead of "Je" if answer starts with vowel).
+      `;
+
+      try{
+        const result = await this.callGemini(prompt);
+        const cleanJson = this.stripCodeFences(result);
+        this.sessionCards = JSON.parse(cleanJson);
+        this.isPracticeActive = true;
+        this.currentIndex = 0;
+        this.resetCardState();
+      }catch(e){
+        alert('生成失败，请检查 API Key 或网络连通性。\n'+ e.message);
+        console.error(e);
+      }finally{
+        this.loading = false;
+      }
+    },
+
+    // 显示变位表
+    async showConjugationTable(verb){
+      this.modalVerb = verb;
+      this.showModal = true;
+      this.loading = true;
+      this.loadingText = `正在查询 ${verb} 的变位...`;
+      this.modalContent = '<p class="text-center text-gray-500">加载中...</p>';
+
+      const prompt = `
+Generate a clear, formatted HTML table of the conjugation for the French verb "${verb}".
+Include columns for these tenses: Présent, Passé Composé, Imparfait, Futur Simple.
+Include rows for all persons (Je, Tu, Il/Elle, Nous, Vous, Ils/Elles).
+Use Tailwind CSS classes for styling (simple table). Output only the HTML table code.
+      `;
+
+      try{
+        const raw = await this.callGemini(prompt);
+        const noFence = this.stripCodeFences(raw);
+        const decoded = this.decodeHTMLEntities(noFence); // 把 &lt;table&gt; 变回 <table>
+        // 直接用 v-html 渲染真正的 HTML
+        this.modalContent = decoded;
+      }catch(e){
+        this.modalContent = '加载失败: ' + e.message;
+      }finally{
+        this.loading = false;
+      }
+    },
+
+    // 通用调用：Gemini 2.0（header 传 X-goog-api-key）
+    async callGemini(text){
+      const key = (this.apiKey || '').trim();
+      if(!key) throw new Error('API Key 为空，请先在“设置”页保存有效的 Key。');
+
+      const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+      const payload = {
+        contents: [{ parts: [{ text }] }]
+      };
+
+      const resp = await fetch(url,{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'X-goog-api-key': key
         },
-        computed: {
-            currentCard() {
-                return this.sessionCards[this.currentIndex] || { prefix: '', suffix: '', verb: '', answer: '', translation: '' };
-            }
-        },
-        methods: {
-            saveSettings() {
-                localStorage.setItem('gemini_api_key', this.apiKey);
-                alert('API Key 已保存');
-                this.currentView = 'library';
-            },
+        body: JSON.stringify(payload)
+      });
 
-            addVerb() {
-                if (this.newVerb && !this.verbLibrary.includes(this.newVerb.trim())) {
-                    this.verbLibrary.push(this.newVerb.trim());
-                    this.saveLibrary();
-                    this.newVerb = '';
-                }
-            },
-            removeVerb(idx) {
-                this.verbLibrary.splice(idx, 1);
-                this.saveLibrary();
-            },
-            saveLibrary() {
-                localStorage.setItem('verb_library', JSON.stringify(this.verbLibrary));
-            },
+      const raw = await resp.text();
+      if(!resp.ok) throw new Error(`API Error ${resp.status}: ${raw}`);
 
-            // --- 核心：调用 Gemini API 生成题目 ---
-            async startPracticeSession() {
-                if (!this.apiKey) return alert("请输入 API Key");
-                
-                this.loading = true;
-                this.loadingText = "正在让 AI 生成题目...";
-                
-                // 1. 确定要练习的动词列表
-                let targetVerbs = [];
-                if (this.settings.mode === 'library') {
-                    // 从库中随机选 5 个
-                    targetVerbs = this.verbLibrary
-                        .slice()
-                        .sort(() => 0.5 - Math.random())
-                        .slice(0, 5);
-                } else {
-                    // 让 AI 决定
-                    targetVerbs = ["AI_AUTO_GENERATE"]; 
-                }
+      let data;
+      try{ data = JSON.parse(raw); }catch(err){ throw new Error('API 返回的不是合法 JSON：'+raw); }
 
-                // 2. 构建 Prompt
-                const prompt = `
-                    You are a strict French teacher. Create a JSON array of 5 fill-in-the-blank exercises.
-                    Target Level: ${this.settings.level} (CEFR).
-                    Target Tense: ${this.settings.tense}.
-                    Verbs: ${this.settings.mode === 'library' ? targetVerbs.join(', ') : 'Choose 5 high-frequency verbs appropriate for ' + this.settings.level}.
-                    
-                    Strictly follow this JSON format (no markdown code blocks, just raw json):
-                    [
-                      {
-                        "verb": "infinitive_verb",
-                        "answer": "conjugated_verb_only",
-                        "prefix": "sentence_part_before_verb",
-                        "suffix": "sentence_part_after_verb",
-                        "translation": "chinese_translation_of_sentence"
-                      }
-                    ]
-                    
-                    Requirements:
-                    1. The 'answer' must be the strictly correct conjugation of the verb in the specified tense.
-                    2. The sentence complexity must match ${this.settings.level}.
-                    3. Do not include the subject in the 'answer' unless it's an impersonal verb that requires it, usually the subject is in the prefix.
-                    4. Ensure correct elision in prefix (e.g., "J'" instead of "Je" if answer starts with vowel).
-                `;
+      const out = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if(!out) throw new Error('API 返回结构中没有 text 字段：'+raw);
+      return out;
+    },
 
-                try {
-                    const result = await this.callGemini(prompt);
-                    // 清理可能包含的 Markdown 标记
-                    const cleanJson = result.replace(/```json/g, '').replace(/```/g, '').trim();
-                    this.sessionCards = JSON.parse(cleanJson);
-                    
-                    this.isPracticeActive = true;
-                    this.currentIndex = 0;
-                    this.resetCardState();
-                } catch (e) {
-                    alert("生成失败，请检查 API Key 或网络连通性。\n" + e.message);
-                    console.error(e);
-                } finally {
-                    this.loading = false;
-                }
-            },
+    // 练习逻辑
+    resetCardState(){
+      this.userInput='';
+      this.feedback={ status:'neutral', attempts:0, showAnswer:false };
+      this.$nextTick(()=>{ if(this.$refs.answerInput) this.$refs.answerInput.focus(); });
+    },
+    checkAnswer(){
+      if(this.feedback.status==='correct') return;
+      const correct = (this.currentCard.answer || '').trim();
+      const input = this.userInput.trim();
+      if(!correct) return;
 
-            // --- 核心：查看变位表 ---
-            async showConjugationTable(verb) {
-                this.modalVerb = verb;
-                this.showModal = true;
-                this.loading = true;
-                this.loadingText = `正在查询 ${verb} 的变位...`;
-                this.modalContent = '<p class="text-center text-gray-500">加载中...</p>';
-
-                const prompt = `
-                    Generate a clear, formatted HTML table of the conjugation for the French verb "${verb}".
-                    Include columns for these tenses: Présent, Passé Composé, Imparfait, Futur Simple.
-                    Include rows for all persons (Je, Tu, Il/Elle, Nous, Vous, Ils/Elles).
-                    Use Tailwind CSS classes for styling (simple table).
-                    Output only the HTML table code.
-                `;
-
-                try {
-                    const html = await this.callGemini(prompt);
-                    const md = window.markdownit({ html: true });
-                    this.modalContent = md.render(html);
-                } catch (e) {
-                    this.modalContent = "加载失败: " + e.message;
-                } finally {
-                    this.loading = false;
-                }
-            },
-
-            // --- 通用 API 调用函数 ---
-            async callGemini(text) {
-                const key = (this.apiKey || '').trim();
-                if (!key) {
-                    throw new Error('API Key 为空，请先在“设置”页保存有效的 Key。');
-                }
-
-                const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-
-                const payload = {
-                    contents: [
-                        {
-                            parts: [
-                                { text: text }
-                            ]
-                        }
-                    ]
-                };
-
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-goog-api-key': key
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const raw = await response.text();
-
-                if (!response.ok) {
-                    throw new Error(`API Error ${response.status}: ${raw}`);
-                }
-
-                let data;
-                try {
-                    data = JSON.parse(raw);
-                } catch (e) {
-                    throw new Error('API 返回的不是合法 JSON：' + raw);
-                }
-
-                const textPart = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!textPart) {
-                    throw new Error('API 返回结构中没有 text 字段：' + raw);
-                }
-
-                return textPart;
-            },
-
-            // --- 练习逻辑 ---
-            resetCardState() {
-                this.userInput = '';
-                this.feedback = { status: 'neutral', attempts: 0, showAnswer: false };
-                this.$nextTick(() => {
-                    if (this.$refs.answerInput) this.$refs.answerInput.focus();
-                });
-            },
-            checkAnswer() {
-                if (this.feedback.status === 'correct') return;
-
-                const correct = (this.currentCard.answer || '').trim();
-                const input = this.userInput.trim();
-
-                if (!correct) return;
-
-                if (input === correct) {
-                    this.feedback.status = 'correct';
-                    setTimeout(this.nextCard, 1200);
-                } else {
-                    this.feedback.status = 'wrong';
-                    this.feedback.attempts++;
-                    if (this.feedback.attempts >= 3) {
-                        this.feedback.showAnswer = true;
-                    }
-                }
-            },
-            nextCard() {
-                if (this.currentIndex < this.sessionCards.length - 1) {
-                    this.currentIndex++;
-                    this.resetCardState();
-                } else {
-                    alert("练习完成！");
-                    this.isPracticeActive = false;
-                }
-            },
-            endPractice() {
-                if (confirm('确定退出当前练习吗？')) {
-                    this.isPracticeActive = false;
-                    this.userInput = '';
-                    this.feedback = { status: 'neutral', attempts: 0, showAnswer: false };
-                }
-            }
-        }
-    }).mount('#app');
+      if(input === correct){
+        this.feedback.status='correct';
+        setTimeout(this.nextCard,1200);
+      }else{
+        this.feedback.status='wrong';
+        this.feedback.attempts++;
+        if(this.feedback.attempts>=3) this.feedback.showAnswer=true;
+      }
+    },
+    nextCard(){
+      if(this.currentIndex < this.sessionCards.length - 1){
+        this.currentIndex++;
+        this.resetCardState();
+      }else{
+        alert('练习完成！');
+        this.isPracticeActive=false;
+      }
+    },
+    endPractice(){
+      if(confirm('确定退出当前练习吗？')){
+        this.isPracticeActive=false;
+        this.userInput='';
+        this.feedback={ status:'neutral', attempts:0, showAnswer:false };
+      }
+    }
+  }
+}).mount('#app');
 </script>
 </body>
 </html>
