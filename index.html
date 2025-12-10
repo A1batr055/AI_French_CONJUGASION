@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI法语变位大师 (Gemini版)</title>
+  <title>AI法语变位大师 · 多模型版</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
@@ -18,6 +18,7 @@
     @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-5px)}100%{transform:translateX(0)}}
     .loader{border:4px solid #f3f3f3;border-top:4px solid #10b981;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite}
     @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+    .kbd{border:1px solid #e5e7eb;background:#f9fafb;border-bottom-width:2px;border-radius:6px;padding:1px 6px;font-size:12px}
   </style>
 </head>
 <body class="text-gray-800 h-screen flex flex-col overflow-hidden">
@@ -32,7 +33,7 @@
         </span>
         <span class="flex flex-col leading-snug">
           <span>AI Conjugaison</span>
-          <span class="text-[11px] text-gray-400 font-normal hidden sm:block">Gemini · 法语变位助手</span>
+          <span class="text-[11px] text-gray-400 font-normal hidden sm:block">多模型 · 法语变位助手</span>
         </span>
       </h1>
       <div class="text-xs md:text-sm flex gap-4 items-center">
@@ -62,21 +63,85 @@
 
       <!-- 设置 -->
       <div v-if="currentView==='settings'"
-           class="max-w-lg mx-auto bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 mt-10 p-6 md:p-8 flex flex-col gap-4">
+           class="max-w-2xl mx-auto bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 mt-10 p-6 md:p-8 flex flex-col gap-4">
         <div class="flex items-center justify-between mb-2">
           <h2 class="text-xl font-semibold text-gray-900 tracking-tight">系统设置</h2>
-          <span class="text-[11px] uppercase tracking-[0.16em] text-gray-400">Gemini API</span>
+          <span class="text-[11px] uppercase tracking-[0.16em] text-gray-400">LLM Providers</span>
         </div>
-        <p class="text-xs text-gray-500">在本地浏览器中安全存储你的 API Key，用于生成练习题和变位表。</p>
-        <div class="mt-2">
-          <label class="block text-xs font-medium text-gray-500 mb-1.5">Gemini API Key</label>
-          <input type="password" v-model="apiKey" placeholder="在此粘贴你的 Google API Key"
-                 class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
-          <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">
-            · Key 仅存储在你的本地浏览器缓存中，不会上传到任何服务器。<br>
-            · <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-emerald-600 underline underline-offset-2">点击这里获取 API Key</a>
-          </p>
+        <p class="text-xs text-gray-500">Key 仅保存在你的浏览器。前端直连将暴露 Key，请自行评估风险。</p>
+
+        <!-- Provider 选择 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">提供商</label>
+            <select v-model="llm.provider" class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
+              <option value="openrouter">OpenRouter</option>
+              <option value="openai">OpenAI (ChatGPT)</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="custom">自定义（手动填 Base URL）</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">模型 ID</label>
+            <input v-model="llm.model" placeholder="如：openai/gpt-3.5-turbo / gemini-2.0-flash / deepseek-chat / claude-3-haiku"
+                   class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
+          </div>
+          <div v-if="llm.provider==='custom'">
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">自定义 Base URL</label>
+            <input v-model="llm.baseUrl" placeholder="https://example.com/v1/chat/completions"
+                   class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
+          </div>
         </div>
+
+        <!-- Keys -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+          <div v-if="['openrouter','custom'].includes(llm.provider)">
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">OpenRouter / 自定义 Key</label>
+            <input type="password" v-model="llm.keys.openrouter" placeholder="填入 OpenRouter 或自定义服务的 Key"
+                   class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
+            <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">
+              申请：<a href="https://openrouter.ai/keys" target="_blank" class="text-emerald-600 underline underline-offset-2">OpenRouter API Keys</a><br>
+              建议在请求头附带 <code class="kbd">HTTP-Referer</code> 和 <span class="kbd">X-Title</span>。
+            </p>
+          </div>
+          <div v-if="llm.provider==='openai'">
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">OpenAI API Key</label>
+            <input type="password" v-model="llm.keys.openai" placeholder="sk-..."
+                   class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
+          </div>
+          <div v-if="llm.provider==='gemini'">
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">Gemini API Key</label>
+            <input type="password" v-model="llm.keys.gemini" placeholder="在此粘贴你的 Google API Key"
+                   class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
+            <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">
+              申请：<a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-emerald-600 underline underline-offset-2">Gemini API Key</a>
+            </p>
+          </div>
+          <div v-if="llm.provider==='deepseek'">
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">DeepSeek API Key</label>
+            <input type="password" v-model="llm.keys.deepseek" placeholder="ds-..."
+                   class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
+            <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">
+              可能的默认地址：<code class="kbd">https://api.deepseek.com/v1/chat/completions</code>（如有变动，请在“自定义”模式下手动填写 Base URL）。
+            </p>
+          </div>
+        </div>
+
+        <!-- OpenRouter 建议头 -->
+        <div v-if="llm.provider==='openrouter' || llm.provider==='custom'" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">HTTP-Referer（可选）</label>
+            <input v-model="llm.referer" :placeholder="defaultReferer"
+                   class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">X-Title（可选）</label>
+            <input v-model="llm.title" placeholder="你的项目名"
+                   class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
+          </div>
+        </div>
+
         <button @click="saveSettings"
                 class="mt-4 w-full bg-emerald-600 text-white py-2.5 rounded-xl hover:bg-emerald-700 text-sm font-medium tracking-wide transition flex items-center justify-center gap-2">
           <i class="fas fa-save text-xs"></i><span>保存设置并进入词库</span>
@@ -216,11 +281,11 @@
             </div>
           </div>
 
-          <button @click="startPracticeSession" :disabled="!apiKey"
+          <button @click="startPracticeSession" :disabled="!activeApiKey"
                   class="w-full py-3 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center gap-2"
-                  :class="apiKey?'bg-emerald-600 text-white hover:bg-emerald-700':'bg-gray-200 text-gray-500 cursor-not-allowed'">
-            <i class="fas fa-magic text-xs" v-if="apiKey"></i>
-            <span>{{ apiKey?'生成题目（调用 AI）':'请先在“设置”中输入 API Key' }}</span>
+                  :class="activeApiKey?'bg-emerald-600 text-white hover:bg-emerald-700':'bg-gray-200 text-gray-500 cursor-not-allowed'">
+            <i class="fas fa-magic text-xs" v-if="activeApiKey"></i>
+            <span>{{ activeApiKey?'生成题目（调用 AI）':'请先在“设置”中输入 API Key' }}</span>
           </button>
         </div>
 
@@ -301,11 +366,26 @@ const { createApp } = Vue;
 
 createApp({
   data(){
+    const defaultLLM = {
+      provider:'openrouter',
+      model:'openai/gpt-3.5-turbo',
+      baseUrl:'',
+      referer: (location.origin + location.pathname),
+      title: 'AI Conjugaison',
+      keys:{ openrouter:'', openai:'', gemini:'', deepseek:'' }
+    };
+    let storedLLM = null;
+    try { storedLLM = JSON.parse(localStorage.getItem('llm_settings') || 'null') } catch(e){ storedLLM = null; }
+    const mergedLLM = Object.assign({}, defaultLLM, storedLLM || {});
+    if(!mergedLLM.keys) mergedLLM.keys = { openrouter:'', openai:'', gemini:'', deepseek:'' };
+
     return {
       currentView:'settings',
-      apiKey: localStorage.getItem('gemini_api_key') || '',
       loading:false,
       loadingText:'',
+
+      // LLM 设置（带默认值）
+      llm: mergedLLM,
 
       // 分组词库
       groups: {},            // { groupName: [verbs] }
@@ -317,10 +397,10 @@ createApp({
       isPracticeActive:false,
       settings:{
         level:'A2',
-        tense:'Présent',     // 选定一个时态
-        mode:'group',        // 'group' | 'all'
+        tense:'Présent',
+        mode:'group',
         groupName:'默认',
-        count:5              // 全库随机时抽取的动词数量
+        count:5
       },
       sessionCards:[],
       currentIndex:0,
@@ -345,13 +425,31 @@ createApp({
     },
     currentCard(){
       return this.sessionCards[this.currentIndex] || { prefix:'', suffix:'', verb:'', person:'', answer:'', translation:'', tense:this.settings.tense };
+    },
+    defaultReferer(){
+      return location.origin + location.pathname;
+    },
+    activeApiKey(){
+      const p = this.llm.provider;
+      if(p==='openrouter' || p==='custom') return (this.llm.keys.openrouter||'').trim();
+      if(p==='openai') return (this.llm.keys.openai||'').trim();
+      if(p==='gemini') return (this.llm.keys.gemini||'').trim();
+      if(p==='deepseek') return (this.llm.keys.deepseek||'').trim();
+      return '';
     }
   },
   mounted(){
+    // 兼容迁移旧版 Gemini key
+    const oldGeminiKey = localStorage.getItem('gemini_api_key');
+    if(oldGeminiKey && !this.llm.keys?.gemini){
+      this.llm.keys = this.llm.keys || {};
+      this.llm.keys.gemini = oldGeminiKey;
+    }
+
     // 载入/迁移本地存储
     const stored = localStorage.getItem('verb_groups');
     if(stored){
-      this.groups = JSON.parse(stored);
+      try { this.groups = JSON.parse(stored) || {}; } catch(e){ this.groups = {}; }
     }else{
       const old = JSON.parse(localStorage.getItem('verb_library') || '[]');
       this.groups = { '默认': (old.length? old : ['aimer','finir','être','avoir','aller','faire','pouvoir','savoir']) };
@@ -368,8 +466,8 @@ createApp({
 
     // —— 设置 ——
     saveSettings(){
-      localStorage.setItem('gemini_api_key', (this.apiKey||'').trim());
-      alert('API Key 已保存');
+      localStorage.setItem('llm_settings', JSON.stringify(this.llm));
+      alert('设置已保存');
       this.currentView = 'library';
     },
 
@@ -378,7 +476,9 @@ createApp({
       const name = (this.newGroupName||'').trim();
       if(!name){ alert('分组名不能为空'); return; }
       if(this.groups[name]){ alert('已存在同名分组'); return; }
-      this.$set ? this.$set(this.groups, name, []) : (this.groups[name]=[]);
+      // Vue3 可直接新增属性，确保触发视图更新可再浅拷贝一次
+      this.groups[name] = [];
+      this.groups = { ...this.groups };
       this.saveGroups();
       this.currentGroup = name;
       this.settings.groupName = name;
@@ -398,6 +498,8 @@ createApp({
     removeVerb(idx){
       (this.groups[this.currentGroup]||[]).splice(idx,1);
       this.saveGroups();
+      // 触发更新
+      this.groups = { ...this.groups };
     },
     moveVerb(verb, targetGroup){
       if(!targetGroup) return;
@@ -407,11 +509,104 @@ createApp({
       if(i>-1) list.splice(i,1);
       if(!this.groups[targetGroup].includes(verb)) this.groups[targetGroup].push(verb);
       this.saveGroups();
+      this.groups = { ...this.groups };
+    },
+
+    // —— Prompt 构造 ——
+    buildPracticePrompt(tense, level, verbs){
+      const total = verbs.length * 6;
+      return `You are a strict French teacher. For EACH verb below, create EXACTLY SIX fill-in-the-blank exercises in the SINGLE tense "${tense}", one per person in:
+[Je, Tu, Il/Elle/On, Nous, Vous, Ils/Elles].
+Level: ${level} (CEFR).
+Verbs: ${verbs.join(', ')}.
+
+Return a RAW JSON array with EXACTLY ${total} objects (no markdown fences). Each object MUST follow:
+{
+  "verb": "<infinitive>",
+  "tense": "${tense}",
+  "person": "<Je|Tu|Il/Elle/On|Nous|Vous|Ils/Elles>",
+  "answer": "<conjugated_verb_only>",
+  "prefix": "<sentence_part_before_verb_including_correct_subject_and_elision>",
+  "suffix": "<sentence_part_after_verb>",
+  "translation": "<Chinese translation>"
+}
+
+Rules:
+1) One and only one exercise per (verb, person) pair in "${tense}".
+2) 'answer' is ONLY the correctly conjugated finite verb for that person and tense (no subject, no objects). 
+   For compound tenses like "Passé Composé", the blank is the correctly conjugated auxiliary only; keep the past participle in prefix/suffix.
+3) Put the correct subject (with elision like "J'") in 'prefix'.
+4) Difficulty should match ${level}.`;
+    },
+    buildTablePrompt(verb){
+      return `Generate a clear, formatted HTML table of the conjugation for the French verb "${verb}".
+Include columns for: Présent, Passé Composé, Imparfait, Futur Simple.
+Include rows for: Je, Tu, Il/Elle, Nous, Vous, Ils/Elles.
+Use Tailwind CSS classes for styling (simple table). Output only the HTML table code.`;
+    },
+
+    // —— 调用多提供商 LLM ——
+    async callLLM({system=null, user, stream=false}){
+      const provider = this.llm.provider;
+      const model = (this.llm.model||'').trim();
+      const key = this.activeApiKey;
+      if(!key) throw new Error('API Key 为空。');
+
+      if(provider==='gemini'){
+        const useModel = model || 'gemini-2.0-flash';
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(useModel)}:generateContent`;
+        const payload = { contents: [{ role:'user', parts: [{ text: (system?(`[SYSTEM]\n${system}\n\n[USER]\n${user}`): user) }] }] };
+        const resp = await fetch(url, {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json', 'X-goog-api-key': key },
+          body: JSON.stringify(payload)
+        });
+        const raw = await resp.text();
+        if(!resp.ok) throw new Error(`API Error ${resp.status}: ${raw}`);
+        let data; try{ data = JSON.parse(raw) } catch(e){ throw new Error('API 返回的不是合法 JSON：'+raw); }
+        const out = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if(!out) throw new Error('API 返回结构中没有 text 字段：'+raw);
+        return out;
+      }
+
+      // OpenAI / OpenRouter / DeepSeek / Custom：OpenAI 兼容 chat-completions
+      let base = '';
+      const headers = { 'Content-Type':'application/json', 'Authorization': `Bearer ${key}` };
+      if(provider==='openai'){
+        base = 'https://api.openai.com/v1/chat/completions';
+      }else if(provider==='openrouter'){
+        base = 'https://openrouter.ai/api/v1/chat/completions';
+        if(this.llm.referer) headers['HTTP-Referer'] = this.llm.referer;
+        if(this.llm.title) headers['X-Title'] = this.llm.title;
+      }else if(provider==='deepseek'){
+        base = 'https://api.deepseek.com/v1/chat/completions';
+      }else if(provider==='custom'){
+        base = (this.llm.baseUrl||'').trim();
+        if(!base) throw new Error('自定义 Base URL 为空');
+      }
+
+      const useModel = model || (provider==='openai' ? 'gpt-3.5-turbo' : (provider==='deepseek' ? 'deepseek-chat' : 'openai/gpt-3.5-turbo'));
+      const payload = {
+        model: useModel,
+        messages: [
+          ...(system ? [{ role:'system', content: system }] : []),
+          { role:'user', content: user }
+        ],
+        stream: !!stream
+      };
+
+      const resp = await fetch(base, { method:'POST', headers, body: JSON.stringify(payload) });
+      const raw = await resp.text();
+      if(!resp.ok) throw new Error(`API Error ${resp.status}: ${raw}`);
+      let data; try{ data = JSON.parse(raw); } catch(e){ throw new Error('API 返回的不是合法 JSON：'+raw); }
+      const out = data?.choices?.[0]?.message?.content ?? data?.choices?.[0]?.delta?.content;
+      if(!out) throw new Error('API 返回结构中没有 content 字段：'+raw);
+      return out;
     },
 
     // —— 练习生成 —— 每个动词 × 六个人称
     async startPracticeSession(){
-      if(!this.apiKey) return alert('请输入 API Key');
+      if(!this.activeApiKey) return alert('请输入 API Key');
 
       // 选词
       let targetVerbs = [];
@@ -433,33 +628,10 @@ createApp({
       this.loading = true;
       this.loadingText = `正在生成 ${total} 道题...`;
 
-      const prompt = `
-You are a strict French teacher. For EACH verb below, create EXACTLY SIX fill-in-the-blank exercises in the SINGLE tense "${tense}", one per person in:
-[Je, Tu, Il/Elle/On, Nous, Vous, Ils/Elles].
-Level: ${this.settings.level} (CEFR).
-Verbs: ${targetVerbs.join(', ')}.
-
-Return a RAW JSON array with EXACTLY ${total} objects (no markdown fences). Each object MUST follow:
-{
-  "verb": "<infinitive>",
-  "tense": "${tense}",
-  "person": "<Je|Tu|Il/Elle/On|Nous|Vous|Ils/Elles>",
-  "answer": "<conjugated_verb_only>",
-  "prefix": "<sentence_part_before_verb_including_correct_subject_and_elision>",
-  "suffix": "<sentence_part_after_verb>",
-  "translation": "<Chinese translation>"
-}
-
-Rules:
-1) One and only one exercise per (verb, person) pair in "${tense}".
-2) 'answer' is ONLY the correctly conjugated finite verb for that person and tense (no subject, no objects). 
-   For compound tenses like "Passé Composé", the blank is the correctly conjugated auxiliary only; keep the past participle in prefix/suffix.
-3) Put the correct subject (with elision like "J'") in 'prefix'.
-4) Difficulty should match ${this.settings.level}.
-      `;
+      const prompt = this.buildPracticePrompt(tense, this.settings.level, targetVerbs);
 
       try{
-        const result = await this.callGemini(prompt);
+        const result = await this.callLLM({ system: null, user: prompt });
         const clean = this.stripCodeFences(result);
         const arr = JSON.parse(clean);
 
@@ -472,7 +644,7 @@ Rules:
         this.currentIndex = 0;
         this.resetCardState();
       }catch(e){
-        alert('生成失败，请检查 API Key 或网络连通性。\n'+ e.message);
+        alert('生成失败，请检查 Key、模型或网络。\n'+ e.message);
         console.error(e);
       }finally{
         this.loading = false;
@@ -487,15 +659,10 @@ Rules:
       this.loadingText = `正在查询 ${verb} 的变位...`;
       this.modalContent = '<p class="text-center text-gray-500">加载中...</p>';
 
-      const prompt = `
-Generate a clear, formatted HTML table of the conjugation for the French verb "${verb}".
-Include columns for: Présent, Passé Composé, Imparfait, Futur Simple.
-Include rows for: Je, Tu, Il/Elle, Nous, Vous, Ils/Elles.
-Use Tailwind CSS classes for styling (simple table). Output only the HTML table code.
-      `;
+      const prompt = this.buildTablePrompt(verb);
 
       try{
-        const raw = await this.callGemini(prompt);
+        const raw = await this.callLLM({ system:null, user: prompt });
         const noFence = this.stripCodeFences(raw);
         const decoded = this.decodeHTMLEntities(noFence);
         this.modalContent = decoded;
@@ -504,31 +671,6 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
       }finally{
         this.loading = false;
       }
-    },
-
-    // —— 通用 Gemini 2.0 调用 ——
-    async callGemini(text){
-      const key = (this.apiKey || '').trim();
-      if(!key) throw new Error('API Key 为空。');
-
-      const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-      const payload = { contents: [{ parts: [{ text }] }] };
-
-      const resp = await fetch(url,{
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'X-goog-api-key': key },
-        body: JSON.stringify(payload)
-      });
-
-      const raw = await resp.text();
-      if(!resp.ok) throw new Error(`API Error ${resp.status}: ${raw}`);
-
-      let data;
-      try{ data = JSON.parse(raw); }catch(err){ throw new Error('API 返回的不是合法 JSON：'+raw); }
-
-      const out = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if(!out) throw new Error('API 返回结构中没有 text 字段：'+raw);
-      return out;
     },
 
     // —— 练习逻辑 ——
