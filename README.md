@@ -46,7 +46,7 @@
 ---
 
 ## 常见报错与处理
-**一键排障**：**刷新页面 / 换节点（代理） / 换网络流量**。  
+❗️**一键排障**：**刷新页面 / 换节点（代理） / 换网络流量**。  
 若仍失败，结合错误码处理：
 
 - **429 / RESOURCE_EXHAUSTED / rate limit / quota**  
@@ -88,9 +88,9 @@ A：多为**额度或限速**触发。Gemini 免费层政策近期调整频繁�
 A：免费清单经常变化；保留了几家**稳定常用**的。你也可以切到“自定义模型 ID”。（OpenRouter 实现兼容 OpenAI 的 `/chat/completions` 协议。） [oai_citation:10‡OpenRouter](https://openrouter.ai/docs/faq?utm_source=chatgpt.com)
 
 **Q4：如何清除本地数据？**  
-A：浏览器控制台执行：  
+A：清空网站存储后刷新。
+
+或浏览器控制台执行：  
 ```js
 localStorage.removeItem('llm_settings'); 
 localStorage.removeItem('verb_groups');
-
-或清空网站存储后刷新。
