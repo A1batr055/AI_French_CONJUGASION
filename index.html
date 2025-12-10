@@ -2,21 +2,42 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI法语变位大师 · 多模型（含OpenRouter免费精选）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>AI法语变位大师 · 多模型</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
-    body{font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;
-      background:radial-gradient(circle at 10% 0%,#ecfdf5 0,#e0f2fe 40%,#f9fafb 100%)}
+    html, body { height: 100%; }
+    body{
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;
+      background:radial-gradient(circle at 10% 0%,#ecfdf5 0,#e0f2fe 40%,#f9fafb 100%);
+      overflow-y:auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
     [v-cloak]{display:none}
     .loader{border:4px solid #f3f3f3;border-top:4px solid #10b981;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite}
     @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+    /* OpenRouter 说明卡片在大屏的排版优化 */
+    .or-help{margin-top:.5rem;padding:.9rem;border:1px dashed #cbd5e1;border-radius:.7rem;font-size:.92rem;line-height:1.55;background:rgba(236,253,245,.55)}
+    .or-help strong{font-weight:650}
+    @media (min-width:1024px){
+      .or-help{padding:1rem 1.1rem;max-width:54rem}
+      .or-help p{margin:.25rem 0}
+      .or-help code{padding:.05rem .35rem;border-radius:.35rem;background:#fff}
+    }
+    /* 底部 sticky 操作条（词库页） */
+    .sticky-bar{
+      position: sticky; bottom: 0; z-index: 15;
+      background: linear-gradient(180deg, rgba(249,250,251,0) 0%, rgba(249,250,251,.92) 38%, rgba(249,250,251,1) 100%);
+      padding-top: .5rem; padding-bottom: .75rem;
+      backdrop-filter: blur(6px);
+    }
   </style>
 </head>
-<body class="text-gray-800 h-screen flex flex-col overflow-hidden">
-<div id="app" v-cloak class="h-full flex flex-col">
+<body class="text-gray-800 min-h-screen flex flex-col">
+<div id="app" v-cloak class="flex-1 flex flex-col">
 
   <nav class="bg-white/80 backdrop-blur border-b border-emerald-50 py-3 shadow-sm z-10">
     <div class="max-w-5xl mx-auto flex justify-between items-center px-3 md:px-0">
@@ -46,9 +67,9 @@
     </div>
   </nav>
 
-  <main class="flex-grow overflow-y-auto py-6 px-4">
-    <div class="max-w-5xl mx-auto h-full relative">
-      <div v-if="loading" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-2xl">
+  <main class="flex-1 py-6 px-4">
+    <div class="max-w-5xl mx-auto relative">
+      <div v-if="loading" class="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
         <div class="loader mb-4"></div>
         <p class="text-emerald-600 font-semibold animate-pulse tracking-wide text-sm">{{ loadingText }}</p>
       </div>
@@ -131,16 +152,13 @@
             <input type="password" v-model="llm.keys.openrouter" placeholder="在此粘贴 OpenRouter 或自定义服务的 Key"
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
 
-            <!-- OpenRouter 简介卡片 -->
-            <div v-if="llm.provider==='openrouter'" class="mt-2 rounded-lg border border-emerald-100 bg-emerald-50/60 p-3 text-[12px] leading-relaxed text-emerald-900">
-              <div class="font-semibold mb-1">OpenRouter 是什么？</div>
-              <div>“聚合”API：一把 Key 调 OpenAI / Gemini / DeepSeek / Mistral 等。</div>
-              <div class="mt-2"><span class="font-semibold">免费模型：</span>选下拉中 <code class="px-1 bg-white/60 rounded">:free</code> 结尾的型号（配额有限，以官网为准）。</div>
-              <div class="mt-2"><span class="font-semibold">上手：</span>1) 注册 openrouter.ai 申请 API Key → 2) 粘贴上面 → 3) 选“免费”或“推荐”模型 → 4) 保存设置 → 去“练习”。</div>
-              <div class="mt-1 text-[11px] text-emerald-800">
-                默认速率约 20 次/分钟；余额&lt;$10 时每天≈50次，余额≥$10 时每天≈1000次。
-              </div>
-              <div class="mt-1"><a href="https://openrouter.ai/keys" target="_blank" class="underline text-emerald-700">获取 OpenRouter API Key</a></div>
+            <!-- OpenRouter 简介卡片（重排版） -->
+            <div v-if="llm.provider==='openrouter'" class="or-help text-emerald-900">
+              <p><strong>OpenRouter 是什么？</strong> 一把 Key 聚合调用 OpenAI / Gemini / DeepSeek / Mistral 等。</p>
+              <p><strong>免费怎么用？</strong> 选下拉里的 <code>:free</code> 模型（配额有限）。</p>
+              <p><strong>极简上手：</strong> 1) 注册 openrouter.ai → 2) 创建 API Key → 3) 在此粘贴 → 4) 选模型并保存。</p>
+              <p class="text-[12px] mt-1">默认速率约 20 次/分钟；余额 &lt; $10 时每天≈50 次，余额 ≥ $10 时每天≈1000 次。</p>
+              <p class="mt-1"><a href="https://openrouter.ai/keys" target="_blank" class="underline text-emerald-700">获取 OpenRouter API Key</a></p>
             </div>
           </div>
 
@@ -187,9 +205,11 @@
                 <button @click="addGroup" class="px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-black transition">添加分组</button>
               </div>
             </div>
-            <div class="text-right text-xs text-gray-500">
-              <div>总词数：{{ allVerbs.length }}</div>
-              <div class="mt-1">当前分组：{{ groups[currentGroup]?.length || 0 }}</div>
+            <div class="flex justify-end">
+              <button @click="goPractice"
+                      class="h-10 px-4 md:px-5 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition flex items-center gap-2">
+                <i class="fas fa-play"></i><span>开始练习</span>
+              </button>
             </div>
           </div>
         </div>
@@ -228,10 +248,23 @@
             </div>
           </div>
         </div>
+
+        <!-- 底部 sticky 开始练习条 -->
+        <div class="sticky-bar">
+          <div class="max-w-4xl mx-auto flex items-center justify-between gap-3 px-1">
+            <div class="text-[12px] text-gray-500">
+              总词数：{{ allVerbs.length }} · 当前分组：{{ groups[currentGroup]?.length || 0 }}
+            </div>
+            <button @click="goPractice"
+                    class="px-4 md:px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition flex items-center gap-2">
+              <i class="fas fa-play"></i><span>开始练习</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- 练习 -->
-      <div v-if="currentView==='practice'" class="max-w-3xl mx-auto h-full flex flex-col">
+      <div v-if="currentView==='practice'" class="max-w-3xl mx-auto">
         <div v-if="!isPracticeActive" class="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 mt-10 p-6 md:p-8">
           <div class="flex items-center justify-between mb-6">
             <div>
@@ -290,7 +323,7 @@
         </div>
 
         <!-- 练习卡片 -->
-        <div v-else class="flex flex-col h-full justify-center mt-6 mb-8">
+        <div v-else class="flex flex-col justify-center mt-6 mb-8">
           <div class="bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-emerald-50 p-6 md:p-8 relative min-h-[360px] flex flex-col justify-between">
             <div class="flex justify-between text-xs text-gray-400 mb-6 border-b border-gray-100 pb-2">
               <span class="inline-flex items-center gap-2">
@@ -312,7 +345,7 @@
                          'border-gray-300 bg-gray-50/80': feedback.status==='neutral'
                        }"
                        class="border-b-2 outline-none text-center mx-1 w-40 px-1 font-mono font-semibold bg-transparent transition-all text-base md:text-lg py-0.5"
-                       autocomplete="off">
+                       autocomplete="off" inputmode="latin">
                 <span v-html="currentCard.suffix"></span>
               </div>
               <div class="inline-flex items-center gap-2 text-gray-500 italic text-[13px] mt-2 bg-gray-50/80 px-3 py-2 rounded-full">
@@ -397,7 +430,6 @@ createApp({
       llm,
       // OpenRouter 精选（免费/付费）
       openrouterFree: [
-        // 免费：仅保留常用且相对稳定的 :free 变体（若失效可切换到“常用付费”）
         { id: 'google/gemini-2.0-flash-exp:free', label: 'Google · Gemini 2.0 Flash Experimental（免费）' },
         { id: 'openai/gpt-oss-20b:free',         label: 'OpenAI · GPT-OSS-20B（免费）' },
         { id: 'openai/gpt-oss-120b:free',        label: 'OpenAI · GPT-OSS-120B（免费）' },
@@ -471,11 +503,9 @@ createApp({
     }
   },
   mounted(){
-    // 兼容旧存储
     const oldGeminiKey = localStorage.getItem('gemini_api_key');
     if(oldGeminiKey && !this.llm.keys?.gemini){ this.llm.keys.gemini = oldGeminiKey; }
 
-    // 词库
     const stored = localStorage.getItem('verb_groups');
     if(stored){
       try { this.groups = JSON.parse(stored) || {}; } catch(e){ this.groups = {}; }
@@ -496,19 +526,21 @@ createApp({
     if(this.modelChoice==='__custom__') this.customModel = this.llm.model || '';
   },
   methods:{
-    // ---------- 公共小工具 ----------
+    // 公共
     saveGroups(){ localStorage.setItem('verb_groups', JSON.stringify(this.groups)); },
     stripCodeFences(str=''){ return String(str).replace(/^```[\s\S]*?\n/,'').replace(/```$/,'').trim(); },
     decodeHTMLEntities(str=''){ const ta=document.createElement('textarea'); ta.innerHTML=str; return ta.value; },
     showError(msg){ this.err.msg = msg; this.err.show = true; },
+    goPractice(){ this.currentView='practice'; window.scrollTo({ top:0, behavior:'smooth' }); },
 
-    // ---------- 设置 ----------
+    // 设置
     saveSettings(){
       localStorage.setItem('llm_settings', JSON.stringify(this.llm));
       this.currentView = 'library';
+      window.scrollTo({ top:0, behavior:'smooth' });
     },
 
-    // ---------- 词库 ----------
+    // 词库
     addGroup(){
       const name = (this.newGroupName||'').trim();
       if(!name) return this.showError('分组名不能为空');
@@ -541,7 +573,7 @@ createApp({
       this.saveGroups(); this.groups = { ...this.groups };
     },
 
-    // ---------- Prompt ----------
+    // Prompt
     buildPracticePrompt(tense, level, verbs){
       const total = verbs.length * 6;
       return `You are a strict French teacher. For EACH verb below, create EXACTLY SIX fill-in-the-blank exercises in the SINGLE tense "${tense}", one per person in:
@@ -574,7 +606,7 @@ Include rows for: Je, Tu, Il/Elle, Nous, Vous, Ils/Elles.
 Use Tailwind CSS classes for styling (simple table). Output only the HTML table code.`;
     },
 
-    // ---------- 统一抽取文本 ----------
+    // 文本抽取
     extractText(data){
       let t =
         data?.choices?.[0]?.message?.content ??
@@ -590,7 +622,7 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
       return (t || '').toString().trim();
     },
 
-    // ---------- 友好错误文案 ----------
+    // 友好错误
     friendlyError(status, raw){
       const txt = raw || '';
       const low = txt.toLowerCase();
@@ -604,7 +636,7 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
       return `调用失败（HTTP ${status || '未知'}）。`;
     },
 
-    // ---------- 多提供商调用 ----------
+    // 多提供商调用
     async callLLM({system=null, user, stream=false}){
       const provider = this.llm.provider;
       const model = (this.llm.model||'').trim();
@@ -662,7 +694,7 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
       return out;
     },
 
-    // ---------- 练习 ----------
+    // 练习
     async startPracticeSession(){
       if(!this.activeApiKey) return this.showError('请输入 API Key');
 
@@ -709,7 +741,7 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
 
     resetCardState(){
       this.userInput=''; this.feedback={ status:'neutral', attempts:0, showAnswer:false };
-      this.$nextTick(()=>{ if(this.$refs.answerInput) this.$refs.answerInput.focus(); });
+      this.$nextTick(()=>{ if(this.$refs.answerInput) this.$refs.answerInput.focus({ preventScroll:true }); });
     },
     checkAnswer(){
       if(this.feedback.status==='correct') return;
@@ -721,11 +753,12 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
     },
     nextCard(){
       if(this.currentIndex < this.sessionCards.length - 1){ this.currentIndex++; this.resetCardState(); }
-      else { this.isPracticeActive=false; }
+      else { this.isPracticeActive=false; window.scrollTo({ top:0, behavior:'smooth' }); }
     },
     endPractice(){
       if(confirm('确定退出当前练习吗？')){
         this.isPracticeActive=false; this.userInput=''; this.feedback={ status:'neutral', attempts:0, showAnswer:false };
+        window.scrollTo({ top:0, behavior:'smooth' });
       }
     }
   }
