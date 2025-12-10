@@ -3,23 +3,23 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-  <title>AI法语变位大师 · 多模型</title>
+  <title>AI 法语变位练习 · 多模型</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <style>
     html, body { height: 100%; }
     body{
-      font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;
-      background:radial-gradient(circle at 10% 0%,#ecfdf5 0,#e0f2fe 40%,#f9fafb 100%);
-      overflow-y:auto;
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      background: radial-gradient(circle at 12% -8%, #ecfdf5 0, #e0f2fe 38%, #f9fafb 100%);
+      overflow-y: auto;                 /* 解决移动端“弹回顶端” */
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
     }
-    [v-cloak]{display:none}
-    .loader{border:4px solid #f3f3f3;border-top:4px solid #10b981;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite}
+    [v-cloak]{ display:none; }
+    .loader{ border:4px solid #f3f3f3;border-top:4px solid #10b981;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite }
     @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-    /* OpenRouter 说明卡片在大屏的排版优化 */
+    /* OpenRouter 说明卡片（大屏优化） */
     .or-help{margin-top:.5rem;padding:.9rem;border:1px dashed #cbd5e1;border-radius:.7rem;font-size:.92rem;line-height:1.55;background:rgba(236,253,245,.55)}
     .or-help strong{font-weight:650}
     @media (min-width:1024px){
@@ -27,7 +27,7 @@
       .or-help p{margin:.25rem 0}
       .or-help code{padding:.05rem .35rem;border-radius:.35rem;background:#fff}
     }
-    /* 底部 sticky 操作条（词库页） */
+    /* 词库页底部 sticky 开始练习条 */
     .sticky-bar{
       position: sticky; bottom: 0; z-index: 15;
       background: linear-gradient(180deg, rgba(249,250,251,0) 0%, rgba(249,250,251,.92) 38%, rgba(249,250,251,1) 100%);
@@ -39,6 +39,7 @@
 <body class="text-gray-800 min-h-screen flex flex-col">
 <div id="app" v-cloak class="flex-1 flex flex-col">
 
+  <!-- 顶部导航 -->
   <nav class="bg-white/80 backdrop-blur border-b border-emerald-50 py-3 shadow-sm z-10">
     <div class="max-w-5xl mx-auto flex justify-between items-center px-3 md:px-0">
       <h1 class="text-base md:text-lg font-semibold tracking-tight flex items-center gap-2 text-emerald-700">
@@ -51,15 +52,15 @@
         </span>
       </h1>
       <div class="text-xs md:text-sm flex gap-4 items-center">
-        <button @click="currentView='settings'"
+        <button @click="switchView('settings')"
                 :class="['pb-1 border-b-2',currentView==='settings'?'border-emerald-500 text-emerald-700 font-semibold':'border-transparent text-gray-400 hover:text-gray-700']">
           设置 & Key
         </button>
-        <button @click="currentView='library'"
+        <button @click="switchView('library')"
                 :class="['pb-1 border-b-2',currentView==='library'?'border-emerald-500 text-emerald-700 font-semibold':'border-transparent text-gray-400 hover:text-gray-700']">
           词库
         </button>
-        <button @click="currentView='practice'"
+        <button @click="switchView('practice')"
                 :class="['pb-1 border-b-2',currentView==='practice'?'border-emerald-500 text-emerald-700 font-semibold':'border-transparent text-gray-400 hover:text-gray-700']">
           练习
         </button>
@@ -69,43 +70,42 @@
 
   <main class="flex-1 py-6 px-4">
     <div class="max-w-5xl mx-auto relative">
+
+      <!-- 全局 Loading -->
       <div v-if="loading" class="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
         <div class="loader mb-4"></div>
         <p class="text-emerald-600 font-semibold animate-pulse tracking-wide text-sm">{{ loadingText }}</p>
       </div>
 
-      <!-- 设置 -->
+      <!-- ========== 设置页 ========== -->
       <div v-if="currentView==='settings'"
            class="max-w-2xl mx-auto bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 mt-10 p-6 md:p-8 flex flex-col gap-4">
         <div class="flex items-center justify-between mb-2">
           <h2 class="text-xl font-semibold text-gray-900 tracking-tight">系统设置</h2>
           <span class="text-[11px] uppercase tracking-[0.16em] text-gray-400">LLM Providers</span>
         </div>
-        <p class="text-xs text-gray-500">Key 仅保存在你的浏览器。前端直连会暴露 Key，请自行评估风险。</p>
+        <p class="text-xs text-gray-500">Key 仅保存在你的浏览器。纯前端直连请自行评估风险。</p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <!-- 提供商 -->
           <div>
             <label class="block text-xs font-medium text-gray-500 mb-1.5">提供商</label>
             <select v-model="llm.provider" class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
-              <option value="openrouter">OpenRouter（含免费精选）</option>
+              <option value="openrouter">OpenRouter（聚合，含免费精选）</option>
               <option value="openai">OpenAI（ChatGPT）</option>
               <option value="gemini">Google Gemini</option>
               <option value="deepseek">DeepSeek</option>
-              <option value="custom">自定义（手动填 Base URL）</option>
+              <option value="custom">自定义（OpenAI 协议兼容）</option>
             </select>
           </div>
 
-          <!-- 模型选择 -->
+          <!-- 模型选择：OpenRouter 动态拉取，仅展示精选免费 + 回退 -->
           <div v-if="llm.provider!=='custom'">
             <label class="block text-xs font-medium text-gray-500 mb-1.5">模型</label>
             <select v-model="modelChoice" class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
-              <!-- OpenRouter：免费精选 + 常用付费 -->
-              <optgroup v-if="llm.provider==='openrouter'" label="OpenRouter 免费（推荐）">
-                <option v-for="m in openrouterFree" :key="'f-'+m.id" :value="m.id">{{ m.label }}</option>
-              </optgroup>
-              <optgroup v-if="llm.provider==='openrouter'" label="OpenRouter 常用付费（需余额）">
-                <option v-for="m in openrouterPaid" :key="'p-'+m.id" :value="m.id">{{ m.label }}</option>
+              <!-- OpenRouter（动态） -->
+              <optgroup v-if="llm.provider==='openrouter'" label="OpenRouter 免费（自动同步，稳定精选）">
+                <option v-for="m in orModelsToShow" :key="'or-'+m.id" :value="m.id">{{ m.label }}</option>
               </optgroup>
 
               <!-- 其它提供商：简洁推荐 -->
@@ -132,7 +132,7 @@
 
           <!-- 自定义 Base URL -->
           <div v-if="llm.provider==='custom'">
-            <label class="block text-xs font-medium text-gray-500 mb-1.5">自定义 Base URL</label>
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">自定义 Base URL（/v1/chat/completions）</label>
             <input v-model="llm.baseUrl" placeholder="https://example.com/v1/chat/completions"
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
           </div>
@@ -140,7 +140,7 @@
           <!-- 自定义模型 ID -->
           <div v-if="modelChoice==='__custom__'">
             <label class="block text-xs font-medium text-gray-500 mb-1.5">自定义模型 ID</label>
-            <input v-model="customModel" placeholder="如：openai/gpt-4o-mini 或 deepseek/deepseek-chat:free"
+            <input v-model="customModel" placeholder="如：openai/gpt-oss-20b:free 或 deepseek/deepseek-chat"
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
           </div>
         </div>
@@ -149,16 +149,16 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
           <div v-if="['openrouter','custom'].includes(llm.provider)">
             <label class="block text-xs font-medium text-gray-500 mb-1.5">OpenRouter / 自定义 Key</label>
-            <input type="password" v-model="llm.keys.openrouter" placeholder="在此粘贴 OpenRouter 或自定义服务的 Key"
+            <input type="password" v-model="llm.keys.openrouter" @change="onOrKeyChanged" @blur="onOrKeyChanged"
+                   placeholder="在此粘贴 OpenRouter 或自定义服务的 Key"
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
 
-            <!-- OpenRouter 简介卡片（重排版） -->
+            <!-- OpenRouter 说明（精简） -->
             <div v-if="llm.provider==='openrouter'" class="or-help text-emerald-900">
-              <p><strong>OpenRouter 是什么？</strong> 一把 Key 聚合调用 OpenAI / Gemini / DeepSeek / Mistral 等。</p>
-              <p><strong>免费怎么用？</strong> 选下拉里的 <code>:free</code> 模型（配额有限）。</p>
-              <p><strong>极简上手：</strong> 1) 注册 openrouter.ai → 2) 创建 API Key → 3) 在此粘贴 → 4) 选模型并保存。</p>
-              <p class="text-[12px] mt-1">默认速率约 20 次/分钟；余额 &lt; $10 时每天≈50 次，余额 ≥ $10 时每天≈1000 次。</p>
-              <p class="mt-1"><a href="https://openrouter.ai/keys" target="_blank" class="underline text-emerald-700">获取 OpenRouter API Key</a></p>
+              <p><strong>OpenRouter 是什么？</strong> 一把 Key 聚合调用多家模型。</p>
+              <p><strong>免费怎么用？</strong> 选下拉里的 <code>:free</code> 模型（有日限与速率）。</p>
+              <p><strong>上手：</strong> 注册 → 创建 Key → 粘贴到上面 → 选模型并保存。</p>
+              <p class="text-[12px] mt-1">默认限速约 20 次/分钟；余额 &lt; $10 时每天约 50 次，余额 ≥ $10 时每天约 1000 次（仅对 <code>:free</code>）。</p>
             </div>
           </div>
 
@@ -187,7 +187,7 @@
         </button>
       </div>
 
-      <!-- 词库 -->
+      <!-- ========== 词库页 ========== -->
       <div v-if="currentView==='library'" class="max-w-4xl mx-auto flex flex-col gap-6">
         <div class="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 p-4 md:p-5 mt-4">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
@@ -263,13 +263,13 @@
         </div>
       </div>
 
-      <!-- 练习 -->
+      <!-- ========== 练习页 ========== -->
       <div v-if="currentView==='practice'" class="max-w-3xl mx-auto">
         <div v-if="!isPracticeActive" class="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 mt-10 p-6 md:p-8">
           <div class="flex items-center justify-between mb-6">
             <div>
               <h2 class="text-xl font-semibold text-gray-900 tracking-tight">生成练习配置</h2>
-              <p class="text-xs text-gray-500 mt-1">选择水平 → 练习时态 → 动词来源。每个动词固定出 6 题（六个人称），总题数 = 词数 × 6。</p>
+              <p class="text-xs text-gray-500 mt-1">选择水平 → 时态 → 题目来源。每动词固定 6 题（六个人称）。</p>
             </div>
             <span class="hidden sm:inline-flex text-[11px] uppercase tracking-[0.2em] text-gray-400">Practice</span>
           </div>
@@ -381,7 +381,7 @@
       <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-2xl">
         <div class="flex flex-col">
           <h3 class="text-lg font-semibold text-gray-900">变位表 · {{ modalVerb }}</h3>
-          <span class="text-[11px] text-gray-400 mt-0.5">Présent / Passé Composé / Imparfait / Futur Simple / Subjonctif Présent / Conditionnel Prés现</span>
+          <span class="text-[11px] text-gray-400 mt-0.5">Présent / Passé Composé / Imparfait / Futur Simple / Subjonctif Présent / Conditionnel Prés</span>
         </div>
         <button @click="showModal=false" class="text-gray-400 hover:text-gray-700 transition"><i class="fas fa-times text-sm"></i></button>
       </div>
@@ -389,7 +389,7 @@
     </div>
   </div>
 
-  <!-- 错误提示（简洁弹窗） -->
+  <!-- 简洁错误弹窗（避免长串 JSON） -->
   <div v-if="err.show" class="fixed inset-0 bg-black/30 flex items-center justify-center z-50" @click.self="err.show=false">
     <div class="bg-white rounded-xl shadow-xl max-w-sm w-[92%] p-5">
       <div class="flex items-start gap-3">
@@ -412,52 +412,66 @@ const { createApp } = Vue;
 
 createApp({
   data(){
+    // —— OpenRouter 免费“精选”（回退用；实际优先加载 /models/user）——
+    const curatedOrFree = [
+      { id: 'openai/gpt-oss-20b:free',       label: 'OpenAI · GPT-OSS-20B（free）' },   // 默认（非 Gemini）
+      { id: 'mistralai/mistral-small:free',  label: 'Mistral · Small（free）' },
+      { id: 'deepseek/deepseek-chat:free',   label: 'DeepSeek · V3 Chat（free）' },
+      { id: 'google/gemini-2.0-flash-exp:free', label: 'Google · Gemini 2.0 Flash Exp（free，非默认）' } // 保留，不设默认
+    ];
+
     const defaultLLM = {
       provider:'openrouter',
-      model:'deepseek/deepseek-chat:free',
+      model: 'openai/gpt-oss-20b:free',     // 默认用非 Gemini
       baseUrl:'',
       keys:{ openrouter:'', openai:'', gemini:'', deepseek:'' }
     };
+
     let storedLLM = null;
     try { storedLLM = JSON.parse(localStorage.getItem('llm_settings') || 'null') } catch(e){ storedLLM = null; }
     const llm = Object.assign({}, defaultLLM, storedLLM || {});
     if(!llm.keys) llm.keys = { openrouter:'', openai:'', gemini:'', deepseek:'' };
 
     return {
+      // 视图
       currentView:'settings',
+
+      // Loading
       loading:false, loadingText:'',
 
+      // LLM 设置
       llm,
-      // OpenRouter 精选（免费/付费）
-      openrouterFree: [
-        { id: 'google/gemini-2.0-flash-exp:free', label: 'Google · Gemini 2.0 Flash Experimental（免费）' },
-        { id: 'openai/gpt-oss-20b:free',         label: 'OpenAI · GPT-OSS-20B（免费）' },
-        { id: 'openai/gpt-oss-120b:free',        label: 'OpenAI · GPT-OSS-120B（免费）' },
-        { id: 'deepseek/deepseek-chat:free',     label: 'DeepSeek · V3 Chat（免费）' },
-        { id: 'mistralai/mistral-small:free',    label: 'Mistral · Small（免费）' }
-      ],
-      openrouterPaid: [
-        { id: 'openai/gpt-4o-mini',              label: 'OpenAI · GPT-4o-mini（推荐）' },
-        { id: 'google/gemini-2.0-flash',         label: 'Google · Gemini 2.0 Flash' },
-        { id: 'deepseek/deepseek-chat',          label: 'DeepSeek · V3 Chat' },
-        { id: 'mistralai/mistral-small',         label: 'Mistral · Small' }
-      ],
-
-      modelChoice: llm.model || 'deepseek/deepseek-chat:free',
+      curatedOrFree,              // 固定回退列表
+      orUserFree: [],             // 动态拉取到的用户可用免费模型
+      modelChoice: llm.model || 'openai/gpt-oss-20b:free',
       customModel: llm.model || '',
 
       // 词库
       groups:{}, currentGroup:'默认', newGroupName:'', newVerb:'',
+
+      // 练习
       isPracticeActive:false,
       settings:{ level:'A2', tense:'Présent', mode:'group', groupName:'默认', count:5 },
       sessionCards:[], currentIndex:0,
       userInput:'', feedback:{ status:'neutral', attempts:0, showAnswer:false },
 
+      // 变位表
       showModal:false, modalVerb:'', modalContent:'',
+
+      // 错误
       err:{ show:false, msg:'' }
     }
   },
   computed:{
+    // OpenRouter 显示的模型（优先用用户可用；否则回退 curated）
+    orModelsToShow(){
+      // 只用我们“精选白名单”中的、并且用户当前真的可用的；若取不到，就用 curated 原样
+      if(this.orUserFree.length){
+        const allow = new Set(this.curatedOrFree.map(m=>m.id));
+        return this.orUserFree.filter(m => allow.has(m.id));
+      }
+      return this.curatedOrFree;
+    },
     groupNames(){ return Object.keys(this.groups); },
     groupVerbs(){ return this.groups[this.currentGroup] || []; },
     allVerbs(){
@@ -478,20 +492,24 @@ createApp({
     }
   },
   watch:{
+    // 切换提供商 → 设置默认模型（OpenRouter 默认非 Gemini）
     'llm.provider':{
       handler(){
         if(this.llm.provider==='openrouter'){
-          this.modelChoice = this.openrouterFree[0].id;
+          // 首选非 Gemini
+          const prefer = 'openai/gpt-oss-20b:free';
+          this.modelChoice = prefer;
+          this.llm.model = prefer;
+          this.tryLoadOrUserModels(); // 有 Key 就拉取
         }else if(this.llm.provider==='openai'){
-          this.modelChoice = 'gpt-4o-mini';
+          this.modelChoice = 'gpt-4o-mini'; this.llm.model = 'gpt-4o-mini';
         }else if(this.llm.provider==='gemini'){
-          this.modelChoice = 'gemini-2.0-flash';
+          this.modelChoice = 'gemini-2.0-flash'; this.llm.model = 'gemini-2.0-flash';
         }else if(this.llm.provider==='deepseek'){
-          this.modelChoice = 'deepseek-chat';
+          this.modelChoice = 'deepseek-chat'; this.llm.model = 'deepseek-chat';
         }else{
-          this.modelChoice = '__custom__';
+          this.modelChoice = '__custom__'; this.llm.model = (this.customModel||'').trim();
         }
-        if(this.modelChoice!=='__custom__') this.llm.model = this.modelChoice;
       }, immediate:true
     },
     modelChoice(val){
@@ -503,9 +521,11 @@ createApp({
     }
   },
   mounted(){
+    // 迁移旧存储
     const oldGeminiKey = localStorage.getItem('gemini_api_key');
     if(oldGeminiKey && !this.llm.keys?.gemini){ this.llm.keys.gemini = oldGeminiKey; }
 
+    // 词库加载
     const stored = localStorage.getItem('verb_groups');
     if(stored){
       try { this.groups = JSON.parse(stored) || {}; } catch(e){ this.groups = {}; }
@@ -517,30 +537,71 @@ createApp({
     if(!this.groups[this.currentGroup]) this.currentGroup = this.groupNames[0];
     this.settings.groupName = this.currentGroup;
 
-    const list = [
-      ...this.openrouterFree.map(x=>x.id),
-      ...this.openrouterPaid.map(x=>x.id),
-      'gpt-4o-mini','gpt-3.5-turbo','gemini-2.0-flash','deepseek-chat'
-    ];
-    this.modelChoice = list.includes(this.llm.model) ? this.llm.model : (this.llm.model ? '__custom__' : this.modelChoice);
-    if(this.modelChoice==='__custom__') this.customModel = this.llm.model || '';
+    // 如果一进来就是 OpenRouter 且已有 Key，自动拉一次
+    if(this.llm.provider==='openrouter' && (this.llm.keys.openrouter||'').trim()){
+      this.tryLoadOrUserModels();
+    }
   },
   methods:{
-    // 公共
+    switchView(v){ this.currentView=v; /* 不再强制滚到顶部，避免移动端抖动 */ },
+
+    // —— 公共工具 —— //
     saveGroups(){ localStorage.setItem('verb_groups', JSON.stringify(this.groups)); },
     stripCodeFences(str=''){ return String(str).replace(/^```[\s\S]*?\n/,'').replace(/```$/,'').trim(); },
     decodeHTMLEntities(str=''){ const ta=document.createElement('textarea'); ta.innerHTML=str; return ta.value; },
     showError(msg){ this.err.msg = msg; this.err.show = true; },
-    goPractice(){ this.currentView='practice'; window.scrollTo({ top:0, behavior:'smooth' }); },
+    toast(s){
+      const div = document.createElement('div');
+      div.textContent = s;
+      div.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:.5rem .75rem;border-radius:.5rem;max-width:90%;z-index:9999';
+      document.body.appendChild(div);
+      setTimeout(()=>div.remove(), 2600);
+    },
 
-    // 设置
+    // —— 设置 —— //
     saveSettings(){
       localStorage.setItem('llm_settings', JSON.stringify(this.llm));
       this.currentView = 'library';
-      window.scrollTo({ top:0, behavior:'smooth' });
+    },
+    async onOrKeyChanged(){
+      if(this.llm.provider!=='openrouter') return;
+      await this.tryLoadOrUserModels();
+    },
+    async tryLoadOrUserModels(){
+      const key = (this.llm.keys.openrouter||'').trim();
+      if(!key) return;
+
+      try{
+        // 拉“当前 Key 可用的模型”，更贴近实际；仅取我们关心的免费模型
+        const r = await fetch('https://openrouter.ai/api/v1/models/user', {
+          headers: { 'Authorization': 'Bearer ' + key }
+        });
+        if(!r.ok){
+          let detail=''; try{ const j=await r.json(); detail = j?.error?.message || j?.message || ''; }catch{}
+          throw new Error(`拉取模型失败（HTTP ${r.status}）${detail? '：'+detail : ''}`);
+        }
+        const data = await r.json();
+        const freeIds = new Set(this.curatedOrFree.map(x=>x.id));
+        const usable = (data?.data || [])
+          .filter(d => freeIds.has(d.id))
+          .map(d => ({ id: d.id, label: (this.curatedOrFree.find(x=>x.id===d.id)?.label || d.id) }));
+        this.orUserFree = usable;
+
+        // 默认选一个非 Gemini 的；若没有，再退而选第一个
+        const prefer = 'openai/gpt-oss-20b:free';
+        const list = this.orModelsToShow;
+        const preferOk = list.find(x=>x.id===prefer);
+        this.modelChoice = preferOk ? prefer : (list[0]?.id || 'openai/gpt-oss-20b:free');
+      }catch(err){
+        console.warn(err);
+        this.toast('未能从 OpenRouter 同步模型，改用内置列表。');
+        this.orUserFree = []; // 回退
+        // 回退时仍坚持默认非 Gemini
+        this.modelChoice = 'openai/gpt-oss-20b:free';
+      }
     },
 
-    // 词库
+    // —— 词库 —— //
     addGroup(){
       const name = (this.newGroupName||'').trim();
       if(!name) return this.showError('分组名不能为空');
@@ -572,8 +633,9 @@ createApp({
       if(!this.groups[targetGroup].includes(verb)) this.groups[targetGroup].push(verb);
       this.saveGroups(); this.groups = { ...this.groups };
     },
+    goPractice(){ this.currentView='practice'; },
 
-    // Prompt
+    // —— Prompt —— //
     buildPracticePrompt(tense, level, verbs){
       const total = verbs.length * 6;
       return `You are a strict French teacher. For EACH verb below, create EXACTLY SIX fill-in-the-blank exercises in the SINGLE tense "${tense}", one per person in:
@@ -606,7 +668,7 @@ Include rows for: Je, Tu, Il/Elle, Nous, Vous, Ils/Elles.
 Use Tailwind CSS classes for styling (simple table). Output only the HTML table code.`;
     },
 
-    // 文本抽取
+    // —— 统一提取文本 —— //
     extractText(data){
       let t =
         data?.choices?.[0]?.message?.content ??
@@ -622,21 +684,21 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
       return (t || '').toString().trim();
     },
 
-    // 友好错误
+    // —— 友好错误 —— //
     friendlyError(status, raw){
-      const txt = raw || '';
+      const txt = (raw||'')+'';
       const low = txt.toLowerCase();
       if(status === 401 || low.includes('unauthorized')) return 'Key 无效或没有权限（401）。请检查 API Key。';
-      if(status === 404 || low.includes('model_not_found')) return '模型名不被支持（404）。请更换模型 ID。';
+      if(status === 404 || low.includes('model_not_found') || /model/.test(low)) return '模型名不被支持或已下线（404）。请更换模型。';
       if(status === 429 || low.includes('rate') || low.includes('quota') || low.includes('exceed')){
-        return '请求被限流或免费额度用完（429 / Quota）。请稍后重试或换别的模型/Key。';
+        return '请求被限流或免费额度用完（429 / Quota）。请稍后重试或换模型/节点。';
       }
       if(low.includes('invalid') && low.includes('model')) return '模型 ID 格式不正确。';
       if(low.includes('bad request') || status === 400) return '请求参数不合法（400）。请检查设置。';
       return `调用失败（HTTP ${status || '未知'}）。`;
     },
 
-    // 多提供商调用
+    // —— 多提供商调用 —— //
     async callLLM({system=null, user, stream=false}){
       const provider = this.llm.provider;
       const model = (this.llm.model||'').trim();
@@ -646,13 +708,16 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
       // Gemini
       if(provider==='gemini'){
         const useModel = model || 'gemini-2.0-flash';
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(useModel)}:generateContent`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(useModel)}:generateContent?key=${encodeURIComponent(key)}`;
         const payload = { contents: [{ role:'user', parts: [{ text: (system?(`[SYSTEM]\n${system}\n\n[USER]\n${user}`): user) }]}] };
-        const resp = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json','X-goog-api-key': key }, body: JSON.stringify(payload) });
+        const resp = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
         const raw = await resp.text();
         if(!resp.ok) throw new Error(this.friendlyError(resp.status, raw));
-        const data = JSON.parse(raw);
-        const out = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        let out = '';
+        try{
+          const data = JSON.parse(raw);
+          out = data?.candidates?.[0]?.content?.parts?.map(p=>p.text).join('') || '';
+        }catch{ /* 非 JSON */ }
         if(!out) throw new Error('模型无返回文本。');
         return out;
       }
@@ -694,7 +759,7 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
       return out;
     },
 
-    // 练习
+    // —— 练习 —— //
     async startPracticeSession(){
       if(!this.activeApiKey) return this.showError('请输入 API Key');
 
@@ -753,12 +818,11 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
     },
     nextCard(){
       if(this.currentIndex < this.sessionCards.length - 1){ this.currentIndex++; this.resetCardState(); }
-      else { this.isPracticeActive=false; window.scrollTo({ top:0, behavior:'smooth' }); }
+      else { this.isPracticeActive=false; }
     },
     endPractice(){
       if(confirm('确定退出当前练习吗？')){
         this.isPracticeActive=false; this.userInput=''; this.feedback={ status:'neutral', attempts:0, showAnswer:false };
-        window.scrollTo({ top:0, behavior:'smooth' });
       }
     }
   }
