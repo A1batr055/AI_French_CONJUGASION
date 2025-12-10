@@ -1,39 +1,35 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <title>AI 法语变位练习 · 多模型</title>
   <style>
-    :root{--bg:#0b0d10;--card:#151922;--ink:#e8ecf1;--sub:#a9b3c1;--accent:#69b7ff;--ok:#3cc86a;--warn:#ffb347;--err:#ff6b6b;}
+    /* 尽量简洁，避免视觉大改动 */
+    :root{--bg:#0b0d10;--card:#151922;--ink:#e8ecf1;--sub:#a9b3c1;--accent:#69b7ff;--ok:#3cc86a;--warn:#ffb347;--err:#ff6b6b;--bd:#2a3242;}
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-    a{color:var(--accent);text-decoration:none}
-    a:hover{text-decoration:underline}
+    a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
     .wrap{max-width:1024px;margin:0 auto;padding:16px}
     header{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
     .tabs{display:flex;gap:8px;flex-wrap:wrap}
-    .tab{padding:8px 12px;border:1px solid #2a3242;border-radius:8px;background:#0f1218;cursor:pointer}
+    .tab{padding:8px 12px;border:1px solid var(--bd);border-radius:8px;background:#0f1218;cursor:pointer}
     .tab[aria-selected="true"]{background:var(--card);border-color:#3a4358}
-    .card{background:var(--card);border:1px solid #2a3242;border-radius:12px;padding:16px;margin:12px 0}
+    .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin:12px 0}
     .row{display:flex;gap:12px;flex-wrap:wrap}
     .col{flex:1 1 320px;min-width:260px}
     label{display:block;margin:10px 0 6px;color:var(--sub)}
-    input,select,textarea,button{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #2a3242;background:#0f1218;color:var(--ink)}
+    input,select,textarea,button{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--bd);background:#0f1218;color:var(--ink)}
     textarea{min-height:120px;resize:vertical}
     button.primary{background:var(--accent);color:#00182a;border:none;cursor:pointer}
     button.ghost{background:#0f1218;color:var(--ink)}
     .muted{color:var(--sub);font-size:12px}
-    .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #2a3242;margin-left:6px}
-    .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
-    .flex{display:flex;gap:8px;align-items:center}
-    .hidden{display:none}
-    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#10151f;border:1px solid #2a3242;color:var(--ink);padding:10px 14px;border-radius:10px;max-width:92%;z-index:9999}
-    .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#111826;border:1px solid #2a3242;border-radius:6px;padding:0 6px}
+    .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#111826;border:1px solid var(--bd);border-radius:6px;padding:0 6px}
     .divider{height:1px;background:#222a39;margin:12px 0}
-    .right{float:right}
-    /* Mobile fix: avoid focus auto-scroll bounce */
+    .hidden{display:none}
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#10151f;border:1px solid var(--bd);color:var(--ink);padding:10px 14px;border-radius:10px;max-width:92%;z-index:9999}
+    /* 移动端防“弹回顶端” */
     input,select,textarea{touch-action:manipulation}
   </style>
 </head>
@@ -48,68 +44,62 @@
       </nav>
     </header>
 
-    <!-- Settings -->
+    <!-- 设置 -->
     <section id="page-settings" class="card">
       <h3 style="margin:0 0 8px 0">模型与密钥</h3>
       <div class="row">
         <div class="col">
           <label for="provider">调用方式</label>
           <select id="provider">
-            <option value="openrouter">OpenRouter（推荐，支持多家免费模型）</option>
-            <option value="custom">自定义（OpenAI / Google / DeepSeek / 其他）</option>
+            <option value="openrouter">OpenRouter（推荐，统一调用多家）</option>
+            <option value="openai">OpenAI（直连，自填模型）</option>
+            <option value="google">Google Gemini（直连，自填模型）</option>
+            <option value="deepseek">DeepSeek（直连，自填模型）</option>
+            <option value="custom">自定义（OpenAI 协议兼容）</option>
           </select>
+          <div class="muted" style="margin-top:6px">提示：**默认使用 OpenRouter 免费模型**；其它直连需自备可用 Key 与可用模型 ID。</div>
         </div>
-        <div class="col" id="openrouter-model-col">
-          <label for="or-model">免费模型（当前可用）</label>
+
+        <div class="col" id="orModelRow">
+          <label for="or-model">免费模型（当前可用，优先非 Gemini）</label>
           <select id="or-model">
-            <!-- 注意：默认不是 Gemini -->
-            <option value="openai/gpt-oss-20b:free">OpenAI — gpt-oss-20b:free</option>
-            <option value="amazon/nova-2-lite-v1:free">Amazon — nova-2-lite-v1:free</option>
+            <!-- 首屏先给精选回退，填 Key 后会自动用 /models/user 过滤 -->
+            <option value="openai/gpt-oss-20b:free">OpenAI — gpt-oss-20b:free（默认）</option>
             <option value="meta-llama/llama-3.3-70b-instruct:free">Meta — llama-3.3-70b-instruct:free</option>
+            <option value="amazon/nova-2-lite-v1:free">Amazon — nova-2-lite-v1:free</option>
             <option value="deepseek/deepseek-chat-v3.1:free">DeepSeek — deepseek-chat-v3.1:free</option>
             <option value="mistralai/mistral-7b-instruct:free">Mistral — mistral-7b-instruct:free</option>
             <option value="google/gemini-2.0-flash-exp:free">Google — gemini-2.0-flash-exp:free（限流）</option>
           </select>
           <div class="muted" style="margin-top:6px">
-            免费额度：新用户合计每日约 <b>50 次</b>；若购买 ≥10 credits，免费模型额度升至 <b>1000 次/天</b>。
-            <a href="https://openrouter.ai/docs/faq" target="_blank" rel="noopener">查看 FAQ</a>
+            OpenRouter 免费配额：新账号合计约 <b>50 次/天</b>；若购买 ≥10 credits，免费模型配额升至 <b>1000 次/天</b>。遇到 429 为限流/额度，请稍后或换模型。
           </div>
         </div>
-        <div class="col hidden" id="custom-provider-col">
-          <label for="custom-provider">自定义供应商</label>
-          <select id="custom-provider">
-            <option value="openai">OpenAI（ChatGPT 兼容）</option>
-            <option value="google">Google Gemini</option>
-            <option value="deepseek">DeepSeek</option>
-            <option value="openrouter-custom">OpenRouter（自填模型 ID）</option>
-          </select>
-        </div>
-        <div class="col hidden" id="custom-model-col">
-          <label for="custom-model">模型 ID</label>
-          <input id="custom-model" placeholder="例如：gpt-4o-mini / gemini-2.0-flash / deepseek-chat"/>
-          <div class="muted">提示：不同厂商的模型 ID 写法不同，请按各自文档填写。</div>
+
+        <div class="col hidden" id="manualModelRow">
+          <label for="model">自填模型 ID</label>
+          <input id="model" placeholder="例如：gpt-4o-mini / gemini-2.0-flash / deepseek-chat"/>
+          <div class="muted">不同厂商写法不同，请查各自文档。</div>
         </div>
       </div>
 
       <div class="row">
         <div class="col">
           <label for="api-key">API Key</label>
-          <input id="api-key" placeholder="在此粘贴你的 API Key（本地保存，不会上传）" autocomplete="off" />
+          <input id="api-key" placeholder="在此粘贴你的 API Key（本地保存，不会上传）" autocomplete="off"/>
           <div class="muted" style="margin-top:6px">
-            OpenRouter 获取密钥：
-            <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">https://openrouter.ai/keys</a>
-            （需科学上网）
+            获取 OpenRouter Key：<a href="https://openrouter.ai/keys" target="_blank" rel="noopener">https://openrouter.ai/keys</a>（需科学上网）
           </div>
         </div>
         <div class="col">
           <label>高级选项</label>
           <div class="row">
             <div class="col">
-              <input id="temperature" type="number" step="0.1" min="0" max="2" value="0.3" />
+              <input id="temperature" type="number" step="0.1" min="0" max="2" value="0.3"/>
               <div class="muted">temperature（0–2）</div>
             </div>
             <div class="col">
-              <input id="max-tokens" type="number" min="1" max="8192" value="512" />
+              <input id="max-tokens" type="number" min="1" max="8192" value="512"/>
               <div class="muted">max_tokens</div>
             </div>
           </div>
@@ -117,28 +107,22 @@
       </div>
 
       <div class="divider"></div>
-
       <div class="row">
-        <div class="col">
-          <button class="primary" id="save">保存设置</button>
-        </div>
-        <div class="col">
-          <button class="ghost" id="reset">清空本地设置</button>
-        </div>
+        <div class="col"><button id="save" class="primary">保存设置</button></div>
+        <div class="col"><button id="reset" class="ghost">清空本地设置</button></div>
       </div>
 
       <div class="card" style="margin-top:12px">
-        <b>关于 OpenRouter（简版说明）</b>
+        <b>OpenRouter 简要说明</b>
         <ul style="margin:8px 0 0 16px;padding:0">
-          <li>用一个 API 统一调用多家模型；本页默认只列出当前可用的“免费”变体。</li>
-          <li>免费模型合并共享每日配额（默认 50 次/天；充值≥10 credits 升至 1000 次/天）。遇到 429，是额度或限流，请稍后或换模型。详情见
-            <a href="https://openrouter.ai/docs/faq" target="_blank" rel="noopener">FAQ</a>。</li>
-          <li>Gemini 的 <code>gemini-2.0-flash-exp:free</code> 官方标注“强限流”，不作为默认。</li>
+          <li>一把 Key 聚合多家模型；本页默认列出**更稳的免费变体**。</li>
+          <li>免费配额合并共享；遇到 404 是“模型下线/不在你账号可用列表”，脚本会自动回退到 <code>gpt-oss-20b:free</code>。</li>
+          <li>Gemini 的 <code>…flash-exp:free</code> 强限流，不作为默认。</li>
         </ul>
       </div>
     </section>
 
-    <!-- Verbs -->
+    <!-- 词库 -->
     <section id="page-verbs" class="card hidden">
       <h3 style="margin:0 0 8px 0">词库</h3>
       <div class="row">
@@ -154,17 +138,17 @@
         <div class="col">
           <label>当前词库</label>
           <textarea id="verb-store" readonly></textarea>
-          <div class="muted">数据保存在浏览器的 <span class="kbd">localStorage</span>（键：<span class="kbd">verb_groups</span>）。</div>
+          <div class="muted">数据保存在 <span class="kbd">localStorage</span>（键：<span class="kbd">verb_groups</span>）。</div>
         </div>
       </div>
     </section>
 
-    <!-- Practice -->
+    <!-- 练习 -->
     <section id="page-practice" class="card hidden">
-      <h3 style="margin:0 0 8px 0">练习（示例）</h3>
+      <h3 style="margin:0 0 8px 0">练习</h3>
       <div class="row">
         <div class="col">
-          <label for="prompt">让模型出题（示例提示词，可自行修改）</label>
+          <label for="prompt">生成题目（可改）</label>
           <textarea id="prompt">请用法语为以下动词各生成 6 道人称变位填空题（Je, Tu, Il/Elle/On, Nous, Vous, Ils/Elles），并给出答案与简要讲解。动词列表：{{verbs}}</textarea>
         </div>
         <div class="col">
@@ -182,226 +166,257 @@
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
   <script>
-    // ========= Storage =========
-    const LS_KEY_SETTINGS = 'llm_settings';
-    const LS_KEY_VERBS = 'verb_groups'; // 兼容你之前的命名
-    const $ = s => document.querySelector(s);
-    const $$ = s => Array.from(document.querySelectorAll(s));
-    function toast(msg, cls=''){ const t=$('#toast'); t.textContent=msg; t.className='toast'+(cls?(' '+cls):''); t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'), 2800); }
+    // ===== 工具 & 状态 =====
+    const LS_SETTINGS='llm_settings';
+    const LS_VERBS='verb_groups';
+    const $=s=>document.querySelector(s);
+    const $$=s=>Array.from(document.querySelectorAll(s));
+    function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),2400); }
 
-    // ========= Tabs =========
-    $$('.tab').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        $$('.tab').forEach(b=>b.setAttribute('aria-selected','false'));
-        btn.setAttribute('aria-selected','true');
-        const page=btn.dataset.page;
-        ['settings','verbs','practice'].forEach(id=>$('#page-'+id).classList.toggle('hidden', id!==page));
-      });
-    });
+    // Tabs
+    $$('.tab').forEach(b=>b.addEventListener('click',()=>{
+      $$('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
+      b.setAttribute('aria-selected','true');
+      const p=b.dataset.page; ['settings','verbs','practice'].forEach(id=>$('#page-'+id).classList.toggle('hidden', id!==p));
+    }));
 
-    // ========= Models (curated free list) =========
-    const FREE_MODELS = [
-      { id:'openai/gpt-oss-20b:free', label:'OpenAI — gpt-oss-20b:free' },
-      { id:'amazon/nova-2-lite-v1:free', label:'Amazon — nova-2-lite-v1:free' },
+    // 免费精选（作为回退清单）
+    const CURATED_FREE=[
+      { id:'openai/gpt-oss-20b:free',                label:'OpenAI — gpt-oss-20b:free' },
       { id:'meta-llama/llama-3.3-70b-instruct:free', label:'Meta — llama-3.3-70b-instruct:free' },
-      { id:'deepseek/deepseek-chat-v3.1:free', label:'DeepSeek — deepseek-chat-v3.1:free' },
-      { id:'mistralai/mistral-7b-instruct:free', label:'Mistral — mistral-7b-instruct:free' },
-      { id:'google/gemini-2.0-flash-exp:free', label:'Google — gemini-2.0-flash-exp:free（限流）' },
+      { id:'amazon/nova-2-lite-v1:free',             label:'Amazon — nova-2-lite-v1:free' },
+      { id:'deepseek/deepseek-chat-v3.1:free',       label:'DeepSeek — deepseek-chat-v3.1:free' },
+      { id:'mistralai/mistral-7b-instruct:free',     label:'Mistral — mistral-7b-instruct:free' },
+      { id:'google/gemini-2.0-flash-exp:free',       label:'Google — gemini-2.0-flash-exp:free（限流）' },
     ];
 
-    // ========= UI bindings =========
-    const els = {
+    // ===== 设置加载/保存 =====
+    const els={
       provider: $('#provider'),
-      orModel: $('#or-model'),
-      customProviderCol: $('#custom-provider-col'),
-      customModelCol: $('#custom-model-col'),
-      customProvider: $('#custom-provider'),
-      customModel: $('#custom-model'),
-      apiKey: $('#api-key'),
-      temp: $('#temperature'),
-      maxTokens: $('#max-tokens'),
-      verbInput: $('#verb-input'),
-      verbStore: $('#verb-store'),
-      out: $('#out'),
-      prompt: $('#prompt'),
+      orModel:  $('#or-model'),
+      manualRow:$('#manualModelRow'),
+      orRow:    $('#orModelRow'),
+      model:    $('#model'),
+      apiKey:   $('#api-key'),
+      temp:     $('#temperature'),
+      maxTok:   $('#max-tokens'),
+      save:     $('#save'),
+      reset:    $('#reset'),
     };
 
-    // provider switch
-    els.provider.addEventListener('change', ()=>{
-      const useOR = els.provider.value==='openrouter';
-      $('#openrouter-model-col').classList.toggle('hidden', !useOR);
-      els.customProviderCol.classList.toggle('hidden', useOR);
-      els.customModelCol.classList.toggle('hidden', useOR);
-    });
+    function mountCurated(){
+      if(!els.orModel) return;
+      if(els.orModel.options.length<2){ // 只有一个或空时补齐
+        els.orModel.innerHTML='';
+        CURATED_FREE.forEach(m=>{
+          const o=document.createElement('option'); o.value=m.id; o.textContent=m.label; els.orModel.appendChild(o);
+        });
+      }
+      els.orModel.value='openai/gpt-oss-20b:free';
+    }
 
-    // load settings
     function loadSettings(){
       try{
-        const s = JSON.parse(localStorage.getItem(LS_KEY_SETTINGS)||'{}');
-        if(s.provider) els.provider.value = s.provider;
-        if(s.model) els.orModel.value = s.model;
-        if(s.customProvider) els.customProvider.value = s.customProvider;
-        if(s.customModel) els.customModel.value = s.customModel;
-        if(s.apiKey) els.apiKey.value = s.apiKey;
-        if(s.temperature!=null) els.temp.value = s.temperature;
-        if(s.max_tokens!=null) els.maxTokens.value = s.max_tokens;
-        // toggle
-        els.provider.dispatchEvent(new Event('change'));
-      }catch(e){}
+        const s=JSON.parse(localStorage.getItem(LS_SETTINGS)||'{}');
+        if(s.provider) els.provider.value=s.provider;
+        if(s.model)    els.orModel.value=s.model;
+        if(s.model && !Array.from(els.orModel.options).some(o=>o.value===s.model)){ mountCurated(); }
+        if(s.manualModel) els.model.value=s.manualModel;
+        if(s.apiKey)   els.apiKey.value=s.apiKey;
+        if(s.temperature!=null) els.temp.value=s.temperature;
+        if(s.max_tokens!=null)  els.maxTok.value=s.max_tokens;
+      }catch{}
+      toggleProviderRows();
     }
+
+    function saveSettings(){
+      const s={
+        provider: els.provider.value,
+        model:    els.orModel.value,
+        manualModel: els.model.value.trim(),
+        apiKey:   els.apiKey.value.trim(),
+        temperature: parseFloat(els.temp.value)||0.3,
+        max_tokens:  parseInt(els.maxTok.value)||512,
+      };
+      localStorage.setItem(LS_SETTINGS, JSON.stringify(s));
+      toast('设置已保存');
+    }
+
+    function resetSettings(){
+      localStorage.removeItem(LS_SETTINGS);
+      toast('已清空本地设置'); setTimeout(()=>location.reload(),400);
+    }
+
+    function toggleProviderRows(){
+      const pv=els.provider.value;
+      const isOR=(pv==='openrouter');
+      els.orRow.classList.toggle('hidden', !isOR);
+      els.manualRow.classList.toggle('hidden', isOR);
+      if(isOR) mountCurated();
+    }
+
+    els.provider.addEventListener('change',toggleProviderRows);
+    els.save.addEventListener('click',saveSettings);
+    els.reset.addEventListener('click',resetSettings);
     loadSettings();
 
-    // save settings
-    $('#save').addEventListener('click', ()=>{
-      const settings = {
-        provider: els.provider.value,
-        model: els.orModel.value,
-        customProvider: els.customProvider.value,
-        customModel: els.customModel.value.trim(),
-        apiKey: els.apiKey.value.trim(),
-        temperature: parseFloat(els.temp.value)||0.3,
-        max_tokens: parseInt(els.maxTokens.value)||512,
-      };
-      localStorage.setItem(LS_KEY_SETTINGS, JSON.stringify(settings));
-      toast('设置已保存', 'ok');
-    });
-
-    // reset
-    $('#reset').addEventListener('click', ()=>{
-      localStorage.removeItem(LS_KEY_SETTINGS);
-      toast('已清空本地设置','warn');
-      setTimeout(()=>location.reload(), 400);
-    });
-
-    // verbs
-    function refreshVerbStore(){
-      const arr = JSON.parse(localStorage.getItem(LS_KEY_VERBS)||'[]');
-      els.verbStore.value = arr.join(', ');
+    // ===== OpenRouter: 同步当前 Key 可用模型 =====
+    async function syncORUserModels(){
+      if(els.provider.value!=='openrouter') return;
+      const key=(els.apiKey.value||'').trim();
+      if(!key){ mountCurated(); return; }
+      try{
+        const r=await fetch('https://openrouter.ai/api/v1/models/user',{ headers:{ 'Authorization':'Bearer '+key }});
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        const data=await r.json();
+        const ids=new Set((data.data||[]).map(d=>d.id));
+        const usable=CURATED_FREE.filter(m=>ids.has(m.id));
+        els.orModel.innerHTML='';
+        (usable.length?usable:CURATED_FREE).forEach(m=>{
+          const o=document.createElement('option'); o.value=m.id; o.textContent=m.label+(ids.has(m.id)?'':'' ); els.orModel.appendChild(o);
+        });
+        els.orModel.value = usable.find(x=>x.id==='openai/gpt-oss-20b:free')?.id
+          || els.orModel.options[0]?.value || 'openai/gpt-oss-20b:free';
+      }catch(e){
+        console.warn('OpenRouter 同步失败，使用内置列表：',e);
+        mountCurated(); toast('未能同步可用模型，已使用内置列表');
+      }
     }
-    refreshVerbStore();
+    ['blur','change'].forEach(ev=>els.apiKey.addEventListener(ev,syncORUserModels));
 
-    $('#add-verbs').addEventListener('click', ()=>{
-      const raw = els.verbInput.value.trim();
-      if(!raw){ toast('请输入动词'); return; }
-      const add = raw.split(',').map(s=>s.trim()).filter(Boolean);
-      const old = JSON.parse(localStorage.getItem(LS_KEY_VERBS)||'[]');
-      const merged = Array.from(new Set([...old, ...add]));
-      localStorage.setItem(LS_KEY_VERBS, JSON.stringify(merged));
-      els.verbInput.value='';
-      refreshVerbStore();
-      toast('已添加到词库','ok');
+    // ===== 词库 =====
+    const vEls={
+      input: $('#verb-input'),
+      store: $('#verb-store'),
+      add:   $('#add-verbs'),
+      clear: $('#clear-verbs'),
+      go:    $('#go-practice'),
+    };
+    function refreshVerbs(){ const arr=JSON.parse(localStorage.getItem(LS_VERBS)||'[]'); vEls.store.value=arr.join(', '); }
+    vEls.add.addEventListener('click',()=>{
+      const raw=vEls.input.value.trim(); if(!raw){ toast('请输入动词'); return; }
+      const add=raw.split(',').map(s=>s.trim()).filter(Boolean);
+      const old=JSON.parse(localStorage.getItem(LS_VERBS)||'[]');
+      const merged=Array.from(new Set([...old,...add]));
+      localStorage.setItem(LS_VERBS, JSON.stringify(merged));
+      vEls.input.value=''; refreshVerbs(); toast('已添加到词库');
     });
-    $('#clear-verbs').addEventListener('click', ()=>{
-      localStorage.removeItem(LS_KEY_VERBS);
-      refreshVerbStore();
-      toast('词库已清空','warn');
-    });
-    $('#go-practice').addEventListener('click', ()=>{
-      document.querySelector('[data-page="practice"]').click();
-    });
+    vEls.clear.addEventListener('click',()=>{ localStorage.removeItem(LS_VERBS); refreshVerbs(); toast('词库已清空'); });
+    vEls.go.addEventListener('click',()=>{ document.querySelector('[data-page="practice"]').click(); });
+    refreshVerbs();
 
-    // ========= LLM call helpers =========
+    // ===== 调用 LLM =====
+    const pEls={ gen: $('#gen'), prompt: $('#prompt'), out: $('#out') };
+
     function getSettings(){
-      const s = JSON.parse(localStorage.getItem(LS_KEY_SETTINGS)||'{}');
+      const s=JSON.parse(localStorage.getItem(LS_SETTINGS)||'{}');
       return {
         provider: s.provider || 'openrouter',
-        model: (s.provider==='openrouter' ? (s.model || 'openai/gpt-oss-20b:free') : (s.customModel || '')),
-        customProvider: s.customProvider || 'openai',
-        apiKey: s.apiKey || '',
+        model:    s.model || 'openai/gpt-oss-20b:free',
+        manualModel: s.manualModel || '',
+        apiKey:   s.apiKey || '',
         temperature: s.temperature ?? 0.3,
-        max_tokens: s.max_tokens ?? 512,
+        max_tokens:  s.max_tokens ?? 512,
       };
     }
-
-    async function callModel(messages){
-      const s = getSettings();
-      if(!s.apiKey){ throw new Error('缺少 API Key'); }
-
-      // OpenRouter（推荐）
-      if(s.provider==='openrouter' || s.customProvider==='openrouter-custom'){
-        const model = s.provider==='openrouter' ? s.model : s.model; // 自定义时同字段
-        try{
-          const r = await fetch('https://openrouter.ai/api/v1/chat/completions',{
-            method:'POST',
-            headers:{
-              'Authorization':'Bearer '+s.apiKey,
-              'Content-Type':'application/json'
-            },
-            body: JSON.stringify({
-              model,
-              messages,
-              temperature:s.temperature,
-              max_tokens:s.max_tokens,
-              stream:false
-            })
-          });
-          if(!r.ok){
-            const text = await r.text();
-            // 404 自动尝试回退
-            if(r.status===404 && model!=='openai/gpt-oss-20b:free'){
-              toast('当前模型不可用，已尝试回退到 gpt-oss-20b:free','warn');
-              localStorage.setItem(LS_KEY_SETTINGS, JSON.stringify({...JSON.parse(localStorage.getItem(LS_KEY_SETTINGS)||'{}'), model:'openai/gpt-oss-20b:free'}));
-              return await callModel(messages);
-            }
-            // 429/额度
-            if(r.status===429){
-              throw new Error('429 限流/额度不足：更换模型或稍后再试。');
-            }
-            throw new Error(`HTTP ${r.status}：${text.slice(0,400)}`);
-          }
-          const data = await r.json();
-          return data?.choices?.[0]?.message?.content || JSON.stringify(data);
-        }catch(e){
-          throw e;
-        }
-      }
-
-      // 其他直连（简单兼容：OpenAI / DeepSeek 使用 OpenAI Chat Completions 规范；Google Gemini 直连未在此示例中启用）
-      if(s.customProvider==='openai' || s.customProvider==='deepseek'){
-        const endpoint = s.customProvider==='openai'
-          ? 'https://api.openai.com/v1/chat/completions'
-          : 'https://api.deepseek.com/v1/chat/completions';
-        const r = await fetch(endpoint,{
-          method:'POST',
-          headers:{
-            'Authorization':'Bearer '+s.apiKey,
-            'Content-Type':'application/json'
-          },
-          body: JSON.stringify({
-            model: s.model,
-            messages,
-            temperature:s.temperature,
-            max_tokens:s.max_tokens
-          })
-        });
-        if(!r.ok){
-          const text = await r.text();
-          throw new Error(`HTTP ${r.status}：${text.slice(0,400)}`);
-        }
-        const data = await r.json();
-        return data?.choices?.[0]?.message?.content || JSON.stringify(data);
-      }
-
-      throw new Error('未支持的供应商设置');
+    async function httpError(resp){
+      let msg=''; try{ const j=await resp.json(); msg=j?.error?.message || j?.message || '' }catch{}
+      const e=new Error(msg||resp.statusText||'请求失败'); e.status=resp.status; e.detail=msg; return e;
+    }
+    function renderErr(err){
+      let s=`请求失败（HTTP ${err.status||'-'}）`; if(err.detail) s+=`：${err.detail}`;
+      pEls.out.value=s;
+      if(err.status===404 && /model/i.test(err.detail||'')){ toast('模型不存在或下线，已建议回退 gpt-oss-20b:free'); }
+      if(err.status===429){ toast('限流/额度不足（429）。稍后再试或更换模型'); }
     }
 
-    // ========= Generate =========
-    $('#gen').addEventListener('click', async ()=>{
-      const verbs = JSON.parse(localStorage.getItem(LS_KEY_VERBS)||'[]');
+    async function callOpenRouter(model, messages, key, temperature, max_tokens){
+      const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+        method:'POST',
+        headers:{ 'Authorization':'Bearer '+key, 'Content-Type':'application/json' },
+        body: JSON.stringify({ model, messages, temperature, max_tokens, stream:false })
+      });
+      return r;
+    }
+
+    async function callDirect(base, model, messages, key, temperature, max_tokens){
+      const r=await fetch(base,{
+        method:'POST',
+        headers:{ 'Authorization':'Bearer '+key, 'Content-Type':'application/json' },
+        body: JSON.stringify({ model, messages, temperature, max_tokens })
+      });
+      return r;
+    }
+
+    async function doGen(){
+      const verbs=JSON.parse(localStorage.getItem(LS_VERBS)||'[]');
       if(verbs.length===0){ toast('词库为空，请先添加动词'); return; }
-      const prompt = $('#prompt').value.replace('{{verbs}}', verbs.join(', '));
-      els.out.value = '生成中…';
+      const s=getSettings();
+      if(!s.apiKey){ toast('请先填写 API Key'); return; }
+
+      const prompt=pEls.prompt.value.replace('{{verbs}}',verbs.join(', '));
+      const messages=[
+        {role:'system',content:'你是专业法语教师，擅长构造简洁、分步、带答案与讲解的变位练习。'},
+        {role:'user',content:prompt}
+      ];
+      pEls.out.value='生成中…';
+
       try{
-        const content = await callModel([
-          {role:'system', content:'你是专业法语教师，擅长构造简洁、分步、带答案与讲解的变位练习。'},
-          {role:'user', content: prompt}
-        ]);
-        els.out.value = content;
-      }catch(e){
-        els.out.value = '';
-        toast(String(e.message||e), 'err');
-      }
-    });
+        // OpenRouter 优先
+        if(s.provider==='openrouter'){
+          let model=s.model || 'openai/gpt-oss-20b:free';
+          let resp=await callOpenRouter(model, messages, s.apiKey, s.temperature, s.max_tokens);
+          if(!resp.ok && resp.status===404 && model!=='openai/gpt-oss-20b:free'){
+            toast('模型 404，自动回退 gpt-oss-20b:free');
+            model='openai/gpt-oss-20b:free';
+            resp=await callOpenRouter(model, messages, s.apiKey, s.temperature, s.max_tokens);
+          }
+          if(!resp.ok) throw await httpError(resp);
+          const data=await resp.json();
+          pEls.out.value = data?.choices?.[0]?.message?.content || '[空响应]';
+          return;
+        }
+
+        // 直连：OpenAI / DeepSeek（Chat Completions 规范）
+        if(s.provider==='openai' || s.provider==='deepseek'){
+          const base = s.provider==='openai' ? 'https://api.openai.com/v1/chat/completions' : 'https://api.deepseek.com/v1/chat/completions';
+          const model = s.manualModel || (s.provider==='openai'?'gpt-4o-mini':'deepseek-chat');
+          const resp = await callDirect(base, model, messages, s.apiKey, s.temperature, s.max_tokens);
+          if(!resp.ok) throw await httpError(resp);
+          const data=await resp.json();
+          pEls.out.value = data?.choices?.[0]?.message?.content || '[空响应]';
+          return;
+        }
+
+        // 直连：Gemini（generateContent）
+        if(s.provider==='google'){
+          const model=s.manualModel || 'gemini-2.0-flash';
+          const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(s.apiKey)}`;
+          const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:messages.map(m=> (m.role==='system'?'[SYSTEM] ':'')+m.content).join('\n\n')}]}]})});
+          if(!resp.ok) throw await httpError(resp);
+          const data=await resp.json();
+          const txt=(data?.candidates?.[0]?.content?.parts||[]).map(p=>p.text).join('')||'';
+          pEls.out.value=txt||'[空响应]';
+          return;
+        }
+
+        // 自定义（OpenAI 兼容）
+        if(s.provider==='custom'){
+          const base=prompt('请输入自定义 Base URL（/v1/chat/completions）：','https://example.com/v1/chat/completions');
+          const model=s.manualModel || prompt('请输入模型 ID：','gpt-3.5-turbo');
+          if(!base||!model) throw new Error('未提供自定义 URL 或模型 ID');
+          const resp=await callDirect(base, model, messages, s.apiKey, s.temperature, s.max_tokens);
+          if(!resp.ok) throw await httpError(resp);
+          const data=await resp.json();
+          pEls.out.value = data?.choices?.[0]?.message?.content || '[空响应]';
+          return;
+        }
+
+        throw new Error('未知的供应商设置');
+      }catch(err){ renderErr(err); }
+    }
+
+    $('#gen').addEventListener('click', doGen);
   </script>
 </body>
 </html>
