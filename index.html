@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI法语变位大师 · 多模型版</title>
+  <title>AI法语变位大师 · 多模型简洁版</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
     body{
@@ -18,7 +17,6 @@
     @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-5px)}100%{transform:translateX(0)}}
     .loader{border:4px solid #f3f3f3;border-top:4px solid #10b981;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite}
     @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-    .kbd{border:1px solid #e5e7eb;background:#f9fafb;border-bottom-width:2px;border-radius:6px;padding:1px 6px;font-size:12px}
   </style>
 </head>
 <body class="text-gray-800 h-screen flex flex-col overflow-hidden">
@@ -68,7 +66,7 @@
           <h2 class="text-xl font-semibold text-gray-900 tracking-tight">系统设置</h2>
           <span class="text-[11px] uppercase tracking-[0.16em] text-gray-400">LLM Providers</span>
         </div>
-        <p class="text-xs text-gray-500">Key 仅保存在你的浏览器。前端直连将暴露 Key，请自行评估风险。</p>
+        <p class="text-xs text-gray-500">Key 仅保存在你的浏览器。前端直连会暴露 Key，请自行评估风险。</p>
 
         <!-- Provider 选择 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -84,7 +82,7 @@
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-500 mb-1.5">模型 ID</label>
-            <input v-model="llm.model" placeholder="如：openai/gpt-3.5-turbo / gemini-2.0-flash / deepseek-chat / claude-3-haiku"
+            <input v-model="llm.model" placeholder="如：openai/gpt-3.5-turbo / gemini-2.0-flash / deepseek-chat"
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
           </div>
           <div v-if="llm.provider==='custom'">
@@ -100,9 +98,8 @@
             <label class="block text-xs font-medium text-gray-500 mb-1.5">OpenRouter / 自定义 Key</label>
             <input type="password" v-model="llm.keys.openrouter" placeholder="填入 OpenRouter 或自定义服务的 Key"
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
-            <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">
-              申请：<a href="https://openrouter.ai/keys" target="_blank" class="text-emerald-600 underline underline-offset-2">OpenRouter API Keys</a><br>
-              建议在请求头附带 <code class="kbd">HTTP-Referer</code> 和 <span class="kbd">X-Title</span>。
+            <p class="text-[11px] text-gray-400 mt-2">
+              申请：<a href="https://openrouter.ai/keys" target="_blank" class="text-emerald-600 underline underline-offset-2">OpenRouter API Keys</a>
             </p>
           </div>
           <div v-if="llm.provider==='openai'">
@@ -114,7 +111,7 @@
             <label class="block text-xs font-medium text-gray-500 mb-1.5">Gemini API Key</label>
             <input type="password" v-model="llm.keys.gemini" placeholder="在此粘贴你的 Google API Key"
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
-            <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">
+            <p class="text-[11px] text-gray-400 mt-2">
               申请：<a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-emerald-600 underline underline-offset-2">Gemini API Key</a>
             </p>
           </div>
@@ -122,28 +119,11 @@
             <label class="block text-xs font-medium text-gray-500 mb-1.5">DeepSeek API Key</label>
             <input type="password" v-model="llm.keys.deepseek" placeholder="ds-..."
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
-            <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">
-              可能的默认地址：<code class="kbd">https://api.deepseek.com/v1/chat/completions</code>（如有变动，请在“自定义”模式下手动填写 Base URL）。
-            </p>
-          </div>
-        </div>
-
-        <!-- OpenRouter 建议头 -->
-        <div v-if="llm.provider==='openrouter' || llm.provider==='custom'" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1.5">HTTP-Referer（可选）</label>
-            <input v-model="llm.referer" :placeholder="defaultReferer"
-                   class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1.5">X-Title（可选）</label>
-            <input v-model="llm.title" placeholder="你的项目名"
-                   class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
           </div>
         </div>
 
         <button @click="saveSettings"
-                class="mt-4 w-full bg-emerald-600 text-white py-2.5 rounded-xl hover:bg-emerald-700 text-sm font-medium tracking-wide transition flex items-center justify-center gap-2">
+                class="mt-4 w-full bg-emerald-600 text-white py-2.5 rounded-xl hover:bg-emerald-700 text-sm font密 tracking-wide transition flex items-center justify-center gap-2">
           <i class="fas fa-save text-xs"></i><span>保存设置并进入词库</span>
         </button>
       </div>
@@ -165,7 +145,7 @@
               <div class="flex gap-2">
                 <input v-model="newGroupName" placeholder="如：不规则动词"
                        class="flex-1 text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
-                <button @click="addGroup" class="px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-black transition">添加分组</button>
+                <button @click="addGroup" class="px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg黑 transition">添加分组</button>
               </div>
             </div>
             <div class="text-right text-xs text-gray-500">
@@ -176,15 +156,15 @@
         </div>
 
         <!-- 词条添加 -->
-        <div class="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 p-4 md:p-5">
+        <div class="bg白/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 p-4 md:p-5">
           <div class="flex items-baseline justify-between">
             <h2 class="text-lg font-semibold text-gray-900">分组词库 · {{ currentGroup }}</h2>
             <span class="text-[11px] text-gray-400">点击卡片查看变位，可移动到其它分组</span>
           </div>
           <div class="flex gap-2 mt-3">
             <input v-model="newVerb" @keyup.enter="addVerb" placeholder="输入动词（如：s'asseoir, peindre）"
-                   class="flex-grow text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
-            <button @click="addVerb" class="px-4 md:px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-black transition whitespace-nowrap">
+                   class="flex-grow text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg灰-50/80">
+            <button @click="addVerb" class="px-4 md:px-5 py-2.5 bg-gray-900 text白 rounded-xl text-sm font-medium hover:bg黑 transition whitespace-nowrap">
               添加到 {{ currentGroup }}
             </button>
           </div>
@@ -193,7 +173,7 @@
         <!-- 词条列表（当前分组） -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-6">
           <div v-for="(v, idx) in groupVerbs" :key="v"
-               class="bg-white/70 backdrop-blur border border-gray-100 hover:border-emerald-200 p-3 rounded-2xl shadow-sm hover:shadow-md transition-all">
+               class="bg白/70 backdrop-blur border border-gray-100 hover:border-emerald-200 p-3 rounded-2xl shadow-sm hover:shadow-md transition-all">
             <div class="flex items-center justify-between gap-2">
               <button class="flex-1 text-left" @click="showConjugationTable(v)">
                 <span class="block font-semibold text-gray-800 text-sm truncate">{{ v }}</span>
@@ -290,7 +270,7 @@
         </div>
 
         <!-- 练习卡片 -->
-        <div v-else class="flex flex-col h-full justify-center mt-6 mb-8">
+        <div v-else class="flex flex-col h-full justify中心 mt-6 mb-8">
           <div class="bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-emerald-50 p-6 md:p-8 relative min-h-[360px] flex flex-col justify-between">
             <div class="flex justify-between text-xs text-gray-400 mb-6 border-b border-gray-100 pb-2">
               <span class="inline-flex items-center gap-2">
@@ -347,7 +327,7 @@
   </main>
 
   <!-- 变位表模态框 -->
-  <div v-if="showModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" @click.self="showModal=false">
+  <div v-if="showModal" class="固定 inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" @click.self="showModal=false">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-gray-100">
       <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-2xl">
         <div class="flex flex-col">
@@ -370,8 +350,6 @@ createApp({
       provider:'openrouter',
       model:'openai/gpt-3.5-turbo',
       baseUrl:'',
-      referer: (location.origin + location.pathname),
-      title: 'AI Conjugaison',
       keys:{ openrouter:'', openai:'', gemini:'', deepseek:'' }
     };
     let storedLLM = null;
@@ -384,7 +362,7 @@ createApp({
       loading:false,
       loadingText:'',
 
-      // LLM 设置（带默认值）
+      // LLM 设置
       llm: mergedLLM,
 
       // 分组词库
@@ -425,9 +403,6 @@ createApp({
     },
     currentCard(){
       return this.sessionCards[this.currentIndex] || { prefix:'', suffix:'', verb:'', person:'', answer:'', translation:'', tense:this.settings.tense };
-    },
-    defaultReferer(){
-      return location.origin + location.pathname;
     },
     activeApiKey(){
       const p = this.llm.provider;
@@ -476,7 +451,6 @@ createApp({
       const name = (this.newGroupName||'').trim();
       if(!name){ alert('分组名不能为空'); return; }
       if(this.groups[name]){ alert('已存在同名分组'); return; }
-      // Vue3 可直接新增属性，确保触发视图更新可再浅拷贝一次
       this.groups[name] = [];
       this.groups = { ...this.groups };
       this.saveGroups();
@@ -498,7 +472,6 @@ createApp({
     removeVerb(idx){
       (this.groups[this.currentGroup]||[]).splice(idx,1);
       this.saveGroups();
-      // 触发更新
       this.groups = { ...this.groups };
     },
     moveVerb(verb, targetGroup){
@@ -576,8 +549,6 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
         base = 'https://api.openai.com/v1/chat/completions';
       }else if(provider==='openrouter'){
         base = 'https://openrouter.ai/api/v1/chat/completions';
-        if(this.llm.referer) headers['HTTP-Referer'] = this.llm.referer;
-        if(this.llm.title) headers['X-Title'] = this.llm.title;
       }else if(provider==='deepseek'){
         base = 'https://api.deepseek.com/v1/chat/completions';
       }else if(provider==='custom'){
