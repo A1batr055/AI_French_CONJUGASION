@@ -19,7 +19,6 @@
     [v-cloak]{display:none}
     .loader{border:4px solid #f3f3f3;border-top:4px solid #10b981;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite}
     @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-    /* OpenRouter 说明卡片在大屏的排版优化 */
     .or-help{margin-top:.5rem;padding:.9rem;border:1px dashed #cbd5e1;border-radius:.7rem;font-size:.92rem;line-height:1.55;background:rgba(236,253,245,.55)}
     .or-help strong{font-weight:650}
     @media (min-width:1024px){
@@ -27,7 +26,6 @@
       .or-help p{margin:.25rem 0}
       .or-help code{padding:.05rem .35rem;border-radius:.35rem;background:#fff}
     }
-    /* 底部 sticky 操作条（词库页） */
     .sticky-bar{
       position: sticky; bottom: 0; z-index: 15;
       background: linear-gradient(180deg, rgba(249,250,251,0) 0%, rgba(249,250,251,.92) 38%, rgba(249,250,251,1) 100%);
@@ -140,7 +138,7 @@
           <!-- 自定义模型 ID -->
           <div v-if="modelChoice==='__custom__'">
             <label class="block text-xs font-medium text-gray-500 mb-1.5">自定义模型 ID</label>
-            <input v-model="customModel" placeholder="如：openai/gpt-4o-mini 或 deepseek/deepseek-chat:free"
+            <input v-model="customModel" placeholder="如：openai/gpt-4o-mini 或 meta-llama/llama-3.2-3b-instruct:free"
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
           </div>
         </div>
@@ -152,12 +150,11 @@
             <input type="password" v-model="llm.keys.openrouter" placeholder="在此粘贴 OpenRouter 或自定义服务的 Key"
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
 
-            <!-- OpenRouter 简介卡片（重排版） -->
             <div v-if="llm.provider==='openrouter'" class="or-help text-emerald-900">
-              <p><strong>OpenRouter 是什么？</strong> 一把 Key 聚合调用 OpenAI / Gemini / DeepSeek / Mistral 等。</p>
+              <p><strong>OpenRouter 是什么？</strong> 一把 Key 可聚合调用 OpenAI / Gemini / DeepSeek / Mistral / Qwen 等。</p>
               <p><strong>免费怎么用？</strong> 选下拉里的 <code>:free</code> 模型（配额有限）。</p>
               <p><strong>极简上手：</strong> 1) 注册 openrouter.ai → 2) 创建 API Key → 3) 在此粘贴 → 4) 选模型并保存。</p>
-              <p class="text-[12px] mt-1">默认速率约 20 次/分钟；余额 &lt; $10 时每天≈50 次，余额 ≥ $10 时每天≈1000 次。</p>
+              <p class="text-[12px] mt-1">免费频率：约 20 次/分钟；每日：余额&lt;$10 ≈50 次，余额≥$10 ≈1000 次。</p>
               <p class="mt-1"><a href="https://openrouter.ai/keys" target="_blank" class="underline text-emerald-700">获取 OpenRouter API Key</a></p>
             </div>
           </div>
@@ -414,7 +411,7 @@ createApp({
   data(){
     const defaultLLM = {
       provider:'openrouter',
-      model:'deepseek/deepseek-chat:free',
+      model:'openai/gpt-oss-20b:free', // 默认用可用的免费模型
       baseUrl:'',
       keys:{ openrouter:'', openai:'', gemini:'', deepseek:'' }
     };
@@ -428,22 +425,21 @@ createApp({
       loading:false, loadingText:'',
 
       llm,
-      // OpenRouter 精选（免费/付费）
+      // OpenRouter 精选（仅保留确认可用的免费模型）
       openrouterFree: [
-        { id: 'google/gemini-2.0-flash-exp:free', label: 'Google · Gemini 2.0 Flash Experimental（免费）' },
-        { id: 'openai/gpt-oss-20b:free',         label: 'OpenAI · GPT-OSS-20B（免费）' },
-        { id: 'openai/gpt-oss-120b:free',        label: 'OpenAI · GPT-OSS-120B（免费）' },
-        { id: 'deepseek/deepseek-chat:free',     label: 'DeepSeek · V3 Chat（免费）' },
-        { id: 'mistralai/mistral-small:free',    label: 'Mistral · Small（免费）' }
+        { id: 'openai/gpt-oss-20b:free',            label: 'OpenAI · GPT-OSS-20B（免费）' },
+        { id: 'openai/gpt-oss-120b:free',           label: 'OpenAI · GPT-OSS-120B（免费）' },
+        { id: 'meta-llama/llama-3.2-3b-instruct:free', label: 'Meta · Llama-3.2-3B-Instruct（免费）' },
+        { id: 'qwen/qwen3-235b-a22b:free',          label: 'Qwen · Qwen3-235B-A22B（免费，大模型）' }
       ],
       openrouterPaid: [
-        { id: 'openai/gpt-4o-mini',              label: 'OpenAI · GPT-4o-mini（推荐）' },
-        { id: 'google/gemini-2.0-flash',         label: 'Google · Gemini 2.0 Flash' },
-        { id: 'deepseek/deepseek-chat',          label: 'DeepSeek · V3 Chat' },
-        { id: 'mistralai/mistral-small',         label: 'Mistral · Small' }
+        { id: 'openai/gpt-4o-mini',                 label: 'OpenAI · GPT-4o-mini（推荐）' },
+        { id: 'google/gemini-2.0-flash',            label: 'Google · Gemini 2.0 Flash' },
+        { id: 'deepseek/deepseek-chat',             label: 'DeepSeek · V3 Chat' },
+        { id: 'mistralai/mistral-small',            label: 'Mistral · Small' }
       ],
 
-      modelChoice: llm.model || 'deepseek/deepseek-chat:free',
+      modelChoice: llm.model || 'openai/gpt-oss-20b:free',
       customModel: llm.model || '',
 
       // 词库
@@ -481,11 +477,11 @@ createApp({
     'llm.provider':{
       handler(){
         if(this.llm.provider==='openrouter'){
-          this.modelChoice = this.openrouterFree[0].id;
+          this.modelChoice = this.openrouterFree[0].id; // 保持免费且可用
         }else if(this.llm.provider==='openai'){
           this.modelChoice = 'gpt-4o-mini';
         }else if(this.llm.provider==='gemini'){
-          this.modelChoice = 'gemini-2.0-flash';
+          this.modelChoice = 'gemini-2.0-flash'; // 不是默认提供商
         }else if(this.llm.provider==='deepseek'){
           this.modelChoice = 'deepseek-chat';
         }else{
@@ -510,20 +506,11 @@ createApp({
     if(stored){
       try { this.groups = JSON.parse(stored) || {}; } catch(e){ this.groups = {}; }
     }else{
-      // —— 仅此处做了必要修改：防御性解析 verb_library，坏数据时自动清理并回退 —— 
-      let old = [];
-      try {
-        old = JSON.parse(localStorage.getItem('verb_library') || '[]');
-        if(!Array.isArray(old)) old = [];
-      } catch(e){
-        // 清除损坏条目，避免下一次再崩
-        try{ localStorage.removeItem('verb_library'); }catch(_){}
-        old = [];
-      }
+      const old = JSON.parse(localStorage.getItem('verb_library') || '[]');
       this.groups = { '默认': (old.length? old : ['aimer','finir','être','avoir','aller','faire','pouvoir','savoir']) };
       this.saveGroups();
     }
-    if(!this.groups[this.currentGroup]) this.currentGroup = this.groupNames[0] || '默认';
+    if(!this.groups[this.currentGroup]) this.currentGroup = this.groupNames[0];
     this.settings.groupName = this.currentGroup;
 
     const list = [
@@ -637,6 +624,7 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
       const low = txt.toLowerCase();
       if(status === 401 || low.includes('unauthorized')) return 'Key 无效或没有权限（401）。请检查 API Key。';
       if(status === 404 || low.includes('model_not_found')) return '模型名不被支持（404）。请更换模型 ID。';
+      if(low.includes('no endpoints found')) return '该模型当前没有可用提供商（404）。请更换模型或去掉 :free 后再试。';
       if(status === 429 || low.includes('rate') || low.includes('quota') || low.includes('exceed')){
         return '请求被限流或免费额度用完（429 / Quota）。请稍后重试或换别的模型/Key。';
       }
