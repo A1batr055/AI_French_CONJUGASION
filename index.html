@@ -94,38 +94,48 @@
             </select>
           </div>
 
-          <!-- 模型选择 -->
+          <!-- 模型选择（OpenRouter 精简） -->
           <div v-if="llm.provider!=='custom'">
             <label class="block text-xs font-medium text-gray-500 mb-1.5">模型</label>
             <select v-model="modelChoice" class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
-              <!-- OpenRouter：免费精选 + 常用付费 -->
-              <optgroup v-if="llm.provider==='openrouter'" label="OpenRouter 免费（推荐）">
-                <option v-for="m in openrouterFree" :key="'f-'+m.id" :value="m.id">{{ m.label }}</option>
-              </optgroup>
-              <optgroup v-if="llm.provider==='openrouter'" label="OpenRouter 常用付费（需余额）">
-                <option v-for="m in openrouterPaid" :key="'p-'+m.id" :value="m.id">{{ m.label }}</option>
-              </optgroup>
+              <!-- OpenRouter：自动路由 + 免费默认 -->
+              <template v-if="llm.provider==='openrouter'">
+                <optgroup label="OpenRouter 自动（推荐）">
+                  <option value="openrouter/auto">openrouter/auto（自动路由）</option>
+                </optgroup>
+                <optgroup label="OpenRouter 免费（默认）">
+                  <option value="openai/gpt-oss-20b:free">OpenAI · GPT-OSS-20B（免费）</option>
+                </optgroup>
+                <optgroup label="OpenRouter 付费示例">
+                  <option value="openai/gpt-4o-mini">OpenAI · GPT-4o-mini</option>
+                </optgroup>
+              </template>
 
               <!-- 其它提供商：简洁推荐 -->
               <optgroup v-if="llm.provider==='openai'" label="推荐">
                 <option value="gpt-4o-mini">gpt-4o-mini</option>
-                <option value="gpt-4.1-mini">gpt-4.1-mini</option>
                 <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
               </optgroup>
               <optgroup v-if="llm.provider==='gemini'" label="推荐">
                 <option value="gemini-2.0-flash">gemini-2.0-flash</option>
                 <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-                <option value="gemini-1.5-flash">gemini-1.5-flash</option>
               </optgroup>
               <optgroup v-if="llm.provider==='deepseek'" label="推荐">
                 <option value="deepseek-chat">deepseek-chat</option>
-                <option value="deepseek-reasoner">deepseek-reasoner</option>
               </optgroup>
 
               <optgroup label="高级">
                 <option value="__custom__">自定义模型 ID…</option>
               </optgroup>
             </select>
+
+            <!-- 自动路由优先免费（控制 payload.models） -->
+            <div v-if="llm.provider==='openrouter'" class="mt-2 text-xs text-gray-600">
+              <label class="inline-flex items-center gap-2">
+                <input type="checkbox" v-model="llm.orPreferFree" class="accent-emerald-600">
+                <span>自动路由时优先候选免费模型</span>
+              </label>
+            </div>
           </div>
 
           <!-- 自定义 Base URL -->
@@ -138,7 +148,7 @@
           <!-- 自定义模型 ID -->
           <div v-if="modelChoice==='__custom__'">
             <label class="block text-xs font-medium text-gray-500 mb-1.5">自定义模型 ID</label>
-            <input v-model="customModel" placeholder="如：openai/gpt-4o-mini 或 meta-llama/llama-3.2-3b-instruct:free"
+            <input v-model="customModel" placeholder="如：openai/gpt-4o-mini 或 openai/gpt-oss-20b:free"
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
           </div>
         </div>
@@ -150,12 +160,14 @@
             <input type="password" v-model="llm.keys.openrouter" placeholder="在此粘贴 OpenRouter 或自定义服务的 Key"
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
 
+            <!-- OpenRouter 简介卡片（底部加注释） -->
             <div v-if="llm.provider==='openrouter'" class="or-help text-emerald-900">
-              <p><strong>OpenRouter 是什么？</strong> 一把 Key 可聚合调用 OpenAI / Gemini / DeepSeek / Mistral / Qwen 等。</p>
-              <p><strong>免费怎么用？</strong> 选下拉里的 <code>:free</code> 模型（配额有限）。</p>
+              <p><strong>OpenRouter 是什么？</strong> 一把 Key 聚合调用 OpenAI / Gemini / DeepSeek / Mistral 等。</p>
+              <p><strong>怎么免费？</strong> 选带 <code>:free</code> 的模型；或用 <code>openrouter/auto</code> 并勾选“优先免费”。</p>
               <p><strong>极简上手：</strong> 1) 注册 openrouter.ai → 2) 创建 API Key → 3) 在此粘贴 → 4) 选模型并保存。</p>
-              <p class="text-[12px] mt-1">免费频率：约 20 次/分钟；每日：余额&lt;$10 ≈50 次，余额≥$10 ≈1000 次。</p>
-              <p class="mt-1"><a href="https://openrouter.ai/keys" target="_blank" class="underline text-emerald-700">获取 OpenRouter API Key</a></p>
+              <p class="text-[12px] mt-1">常见限流：约 20 次/分钟；余额 &lt; $10 每日 ~50 次，≥$10 每日 ~1000 次。</p>
+              <p class="text-[12px] mt-1 text-emerald-800"><strong>提示：</strong> 报错 <code>429/404</code> 请更换模型或查阅官方文档自行配置；模型 ID 需精确填写，勿添加多余字符。</p>
+              <p class="mt-1"><a href="https://openrouter.ai/keys" target="_blank" class="underline text-emerald-700">获取 OpenRouter API Key</a> ｜ <a href="https://openrouter.ai/docs" target="_blank" class="underline text-emerald-700">官方文档</a></p>
             </div>
           </div>
 
@@ -411,8 +423,9 @@ createApp({
   data(){
     const defaultLLM = {
       provider:'openrouter',
-      model:'openai/gpt-oss-20b:free', // 默认用可用的免费模型
+      model:'openai/gpt-oss-20b:free',   // 手动默认：免费且稳定
       baseUrl:'',
+      orPreferFree:true,                 // openrouter/auto 时优先免费候选
       keys:{ openrouter:'', openai:'', gemini:'', deepseek:'' }
     };
     let storedLLM = null;
@@ -425,20 +438,6 @@ createApp({
       loading:false, loadingText:'',
 
       llm,
-      // OpenRouter 精选（仅保留确认可用的免费模型）
-      openrouterFree: [
-        { id: 'openai/gpt-oss-20b:free',            label: 'OpenAI · GPT-OSS-20B（免费）' },
-        { id: 'openai/gpt-oss-120b:free',           label: 'OpenAI · GPT-OSS-120B（免费）' },
-        { id: 'meta-llama/llama-3.2-3b-instruct:free', label: 'Meta · Llama-3.2-3B-Instruct（免费）' },
-        { id: 'qwen/qwen3-235b-a22b:free',          label: 'Qwen · Qwen3-235B-A22B（免费，大模型）' }
-      ],
-      openrouterPaid: [
-        { id: 'openai/gpt-4o-mini',                 label: 'OpenAI · GPT-4o-mini（推荐）' },
-        { id: 'google/gemini-2.0-flash',            label: 'Google · Gemini 2.0 Flash' },
-        { id: 'deepseek/deepseek-chat',             label: 'DeepSeek · V3 Chat' },
-        { id: 'mistralai/mistral-small',            label: 'Mistral · Small' }
-      ],
-
       modelChoice: llm.model || 'openai/gpt-oss-20b:free',
       customModel: llm.model || '',
 
@@ -477,11 +476,12 @@ createApp({
     'llm.provider':{
       handler(){
         if(this.llm.provider==='openrouter'){
-          this.modelChoice = this.openrouterFree[0].id; // 保持免费且可用
+          // 默认给免费稳定项；也允许选择 auto
+          this.modelChoice = this.modelChoice?.startsWith('openrouter/') ? this.modelChoice : 'openai/gpt-oss-20b:free';
         }else if(this.llm.provider==='openai'){
           this.modelChoice = 'gpt-4o-mini';
         }else if(this.llm.provider==='gemini'){
-          this.modelChoice = 'gemini-2.0-flash'; // 不是默认提供商
+          this.modelChoice = 'gemini-2.0-flash';
         }else if(this.llm.provider==='deepseek'){
           this.modelChoice = 'deepseek-chat';
         }else{
@@ -513,12 +513,12 @@ createApp({
     if(!this.groups[this.currentGroup]) this.currentGroup = this.groupNames[0];
     this.settings.groupName = this.currentGroup;
 
-    const list = [
-      ...this.openrouterFree.map(x=>x.id),
-      ...this.openrouterPaid.map(x=>x.id),
-      'gpt-4o-mini','gpt-3.5-turbo','gemini-2.0-flash','deepseek-chat'
+    // 保证 modelChoice 与 llm.model 同步且合法
+    const allowed = [
+      'openrouter/auto','openai/gpt-oss-20b:free','openai/gpt-4o-mini',
+      'gpt-4o-mini','gpt-3.5-turbo','gemini-2.0-flash','gemini-1.5-pro','deepseek-chat'
     ];
-    this.modelChoice = list.includes(this.llm.model) ? this.llm.model : (this.llm.model ? '__custom__' : this.modelChoice);
+    this.modelChoice = allowed.includes(this.llm.model) ? this.llm.model : (this.llm.model ? '__custom__' : 'openai/gpt-oss-20b:free');
     if(this.modelChoice==='__custom__') this.customModel = this.llm.model || '';
   },
   methods:{
@@ -623,8 +623,7 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
       const txt = raw || '';
       const low = txt.toLowerCase();
       if(status === 401 || low.includes('unauthorized')) return 'Key 无效或没有权限（401）。请检查 API Key。';
-      if(status === 404 || low.includes('model_not_found')) return '模型名不被支持（404）。请更换模型 ID。';
-      if(low.includes('no endpoints found')) return '该模型当前没有可用提供商（404）。请更换模型或去掉 :free 后再试。';
+      if(status === 404 || low.includes('model_not_found') || low.includes('no endpoints')) return '模型名不被支持或已下线（404）。请更换模型 ID。';
       if(status === 429 || low.includes('rate') || low.includes('quota') || low.includes('exceed')){
         return '请求被限流或免费额度用完（429 / Quota）。请稍后重试或换别的模型/Key。';
       }
@@ -665,9 +664,8 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
         if(!base) throw new Error('自定义 Base URL 为空');
       }
 
-      const useModel =
-        model || (provider==='openai' ? 'gpt-3.5-turbo' : (provider==='deepseek' ? 'deepseek-chat' : 'openai/gpt-3.5-turbo'));
-
+      // 模型与自动路由
+      let useModel = model;
       const payload = {
         model: useModel,
         messages: [ ...(system ? [{ role:'system', content: system }] : []), { role:'user', content: user } ],
@@ -675,6 +673,18 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
         max_tokens: 4096,
         temperature: 0.2
       };
+
+      // 如果选择 openrouter/auto，且勾选“优先免费”，则限制候选为稳定免费模型
+      if(provider==='openrouter' && model === 'openrouter/auto' && this.llm.orPreferFree){
+        payload.models = ['openai/gpt-oss-20b:free']; // 精确 ID，避免解析错误
+      }
+
+      // 若没填（极端情况），兜底到稳定免费模型
+      if(!useModel){
+        if(provider==='openrouter') payload.model = 'openai/gpt-oss-20b:free';
+        if(provider==='openai') payload.model = 'gpt-3.5-turbo';
+        if(provider==='deepseek') payload.model = 'deepseek-chat';
+      }
 
       const resp = await fetch(base, { method:'POST', headers, body: JSON.stringify(payload) });
       const raw = await resp.text();
