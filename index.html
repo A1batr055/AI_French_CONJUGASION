@@ -20,6 +20,7 @@
 <body class="text-gray-800 h-screen flex flex-col overflow-hidden">
 <div id="app" v-cloak class="h-full flex flex-col">
 
+  <!-- 顶部 -->
   <nav class="bg-white/80 backdrop-blur border-b border-emerald-50 py-3 shadow-sm z-10">
     <div class="max-w-5xl mx-auto flex justify-between items-center px-3 md:px-0">
       <h1 class="text-base md:text-lg font-semibold tracking-tight flex items-center gap-2 text-emerald-700">
@@ -50,6 +51,7 @@
 
   <main class="flex-grow overflow-y-auto py-6 px-4">
     <div class="max-w-5xl mx-auto h-full relative">
+      <!-- 全局 Loading -->
       <div v-if="loading" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-2xl">
         <div class="loader mb-4"></div>
         <p class="text-emerald-600 font-semibold animate-pulse tracking-wide text-sm">{{ loadingText }}</p>
@@ -77,25 +79,27 @@
             </select>
           </div>
 
-          <!-- 模型（下拉） -->
-          <div>
+          <!-- 模型（下拉选择；默认按提供商推荐列表） -->
+          <div v-if="llm.provider!=='custom'">
             <label class="block text-xs font-medium text-gray-500 mb-1.5">模型</label>
             <select v-model="modelChoice" class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
               <optgroup label="推荐">
                 <option v-for="m in modelOptions" :key="m" :value="m">{{ m }}</option>
               </optgroup>
-              <optgroup label="其它">
+              <optgroup label="高级">
                 <option value="__custom__">自定义模型 ID…</option>
               </optgroup>
             </select>
           </div>
 
-          <!-- 自定义 model/baseUrl（仅在 custom provider 或选择自定义模型时显示） -->
+          <!-- 自定义 Base URL（仅自定义提供商） -->
           <div v-if="llm.provider==='custom'">
             <label class="block text-xs font-medium text-gray-500 mb-1.5">自定义 Base URL</label>
             <input v-model="llm.baseUrl" placeholder="https://example.com/v1/chat/completions"
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
           </div>
+
+          <!-- 自定义模型 ID（仅在选择“自定义模型 ID”时出现） -->
           <div v-if="modelChoice==='__custom__'">
             <label class="block text-xs font-medium text-gray-500 mb-1.5">自定义模型 ID</label>
             <input v-model="customModel" placeholder="例如：openai/gpt-4o-mini 或 gemini-2.0-flash"
@@ -107,22 +111,32 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
           <div v-if="['openrouter','custom'].includes(llm.provider)">
             <label class="block text-xs font-medium text-gray-500 mb-1.5">OpenRouter / 自定义 Key</label>
-            <input type="password" v-model="llm.keys.openrouter" placeholder="填入 OpenRouter 或自定义服务的 Key"
+            <input type="password" v-model="llm.keys.openrouter" placeholder="在此粘贴 OpenRouter 或自定义服务的 Key"
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
-            <p class="text-[11px] text-gray-400 mt-2">
-              申请：<a href="https://openrouter.ai/keys" target="_blank" class="text-emerald-600 underline underline-offset-2">OpenRouter API Keys</a>
-            </p>
+
+            <!-- OpenRouter 简介卡片 -->
+            <div v-if="llm.provider==='openrouter'" class="mt-2 rounded-lg border border-emerald-100 bg-emerald-50/60 p-3 text-[12px] leading-relaxed text-emerald-900">
+              <div class="font-semibold mb-1">OpenRouter 是什么？</div>
+              <div>一个「模型聚合 API」：用一把 Key 调 OpenAI / Gemini / DeepSeek 等。</div>
+              <div class="mt-2"><span class="font-semibold">免费额度：</span>只有 <code class="px-1 bg-white/60 rounded">:free</code> 结尾的模型免费；新账号约 <b>50 次/天</b>，充值满 $10 后 <b>1000 次/天</b>。</div>
+              <div class="mt-2"><span class="font-semibold">超快速上手：</span>1) 注册 openrouter.ai 并创建 API Key → 2) 粘贴到上面 → 3) 选择模型 → 4) 保存设置 → 到“练习”页生成题目。</div>
+              <div class="mt-2 text-[11px] text-emerald-700">价格按模型官方单价从余额扣；不选 <code>:free</code> 就会计费。</div>
+              <div class="mt-1"><a href="https://openrouter.ai/keys" target="_blank" class="underline text-emerald-700">获取 OpenRouter API Key</a></div>
+            </div>
           </div>
+
           <div v-if="llm.provider==='openai'">
             <label class="block text-xs font-medium text-gray-500 mb-1.5">OpenAI API Key</label>
             <input type="password" v-model="llm.keys.openai" placeholder="sk-..."
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
           </div>
+
           <div v-if="llm.provider==='gemini'">
             <label class="block text-xs font-medium text-gray-500 mb-1.5">Gemini API Key</label>
-            <input type="password" v-model="llm.keys.gemini" placeholder="在此粘贴你的 Google API Key"
+            <input type="password" v-model="llm.keys.gemini" placeholder="在此粘贴 Google API Key"
                    class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
           </div>
+
           <div v-if="llm.provider==='deepseek'">
             <label class="block text-xs font-medium text-gray-500 mb-1.5">DeepSeek API Key</label>
             <input type="password" v-model="llm.keys.deepseek" placeholder="ds-..."
@@ -136,7 +150,7 @@
         </button>
       </div>
 
-      <!-- 词库 -->
+      <!-- 词库（分组） -->
       <div v-if="currentView==='library'" class="max-w-4xl mx-auto flex flex-col gap-6">
         <div class="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 p-4 md:p-5 mt-4">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
@@ -341,44 +355,37 @@ createApp({
     if(!llm.keys) llm.keys = { openrouter:'', openai:'', gemini:'', deepseek:'' };
 
     return {
-      // 页面
       currentView:'settings',
       loading:false, loadingText:'',
 
-      // LLM 设置
       llm,
       modelChoice: llm.model || 'openai/gpt-3.5-turbo',
       customModel: llm.model || '',
 
-      // 词库
       groups:{}, currentGroup:'默认', newGroupName:'', newVerb:'',
-
-      // 练习
       isPracticeActive:false,
       settings:{ level:'A2', tense:'Présent', mode:'group', groupName:'默认', count:5 },
       sessionCards:[], currentIndex:0,
       userInput:'', feedback:{ status:'neutral', attempts:0, showAnswer:false },
 
-      // 模态
       showModal:false, modalVerb:'', modalContent:''
     }
   },
   computed:{
-    // 模型列表（按提供商）
+    // 按提供商给出推荐模型（可改）
     modelOptions(){
       const p = this.llm.provider;
       if(p==='openrouter'){
         return [
           'openai/gpt-4o-mini',
           'openai/gpt-3.5-turbo',
-          'anthropic/claude-3.5-haiku',
           'google/gemini-2.0-flash',
           'google/gemini-1.5-pro',
           'deepseek/deepseek-chat',
           'deepseek/deepseek-reasoner',
           'mistralai/mistral-small',
           'meta-llama/llama-3.1-8b-instruct'
-          // 如需免费：可手动选择对应的 :free 变体（若存在）
+          // 免费变体通常以 :free 结尾（若当期提供）
         ];
       }else if(p==='openai'){
         return ['gpt-4o-mini','gpt-4.1-mini','gpt-3.5-turbo'];
@@ -411,7 +418,7 @@ createApp({
     }
   },
   watch:{
-    // 提供商变更时，自动将模型选到该提供商的第一项
+    // 提供商变化：自动选第一项；同步到 llm.model
     'llm.provider':{
       handler(newP){
         const list = this.modelOptions.filter(Boolean);
@@ -420,22 +427,21 @@ createApp({
         if(this.modelChoice!=='__custom__') this.llm.model = this.modelChoice;
       }, immediate:true
     },
-    // 下拉选择变化时，同步到 llm.model；选“自定义”则用 customModel
+    // 下拉变化 → 同步
     modelChoice(val){
       if(val==='__custom__'){ this.llm.model = (this.customModel||'').trim(); }
       else { this.llm.model = val; }
     },
-    // 自定义模型输入变化时，同步
+    // 自定义输入变化
     customModel(val){
       if(this.modelChoice==='__custom__') this.llm.model = (val||'').trim();
     }
   },
   mounted(){
-    // 兼容老版 Gemini Key
+    // 兼容旧存储
     const oldGeminiKey = localStorage.getItem('gemini_api_key');
     if(oldGeminiKey && !this.llm.keys?.gemini){ this.llm.keys.gemini = oldGeminiKey; }
 
-    // 载入词库（含从旧版迁移）
     const stored = localStorage.getItem('verb_groups');
     if(stored){
       try { this.groups = JSON.parse(stored) || {}; } catch(e){ this.groups = {}; }
@@ -447,7 +453,7 @@ createApp({
     if(!this.groups[this.currentGroup]) this.currentGroup = this.groupNames[0];
     this.settings.groupName = this.currentGroup;
 
-    // 初始化 modelChoice
+    // 初始化下拉状态
     const list = this.modelOptions;
     this.modelChoice = list.includes(this.llm.model) ? this.llm.model : (this.llm.model ? '__custom__' : (list[0]||'__custom__'));
     if(this.modelChoice==='__custom__') this.customModel = this.llm.model || '';
@@ -551,7 +557,7 @@ Use Tailwind CSS classes for styling (simple table). Output only the HTML table 
         return out;
       }
 
-      // OpenAI / OpenRouter / DeepSeek / Custom 走 OpenAI 兼容接口
+      // OpenAI / OpenRouter / DeepSeek / Custom 走 OpenAI 兼容 chat-completions
       let base = '';
       const headers = { 'Content-Type':'application/json', 'Authorization': `Bearer ${key}` };
       if(provider==='openai'){ base = 'https://api.openai.com/v1/chat/completions'; }
