@@ -46,7 +46,7 @@
 ---
 
 ## 常见报错与处理
-**一键排障三步**：**刷新页面 → 换节点（代理） → 换网络/流量**。  
+**一键排障**：**刷新页面 / 换节点（代理） / 换网络流量**。  
 若仍失败，结合错误码处理：
 
 - **429 / RESOURCE_EXHAUSTED / rate limit / quota**  
@@ -92,4 +92,5 @@ A：浏览器控制台执行：
 ```js
 localStorage.removeItem('llm_settings'); 
 localStorage.removeItem('verb_groups');
+
 或清空网站存储后刷新。
