@@ -201,7 +201,7 @@
               <div class="flex gap-2">
                 <input v-model="newGroupName" placeholder="如：不规则动词"
                        class="flex-1 text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
-                <button @click="addGroup" class="px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg黑 transition">添加分组</button>
+                <button @click="addGroup" class="px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-black transition">添加分组</button>
               </div>
             </div>
             <div class="flex justify-end">
@@ -221,7 +221,7 @@
           <div class="flex gap-2 mt-3">
             <input v-model="newVerb" @keyup.enter="addVerb" placeholder="输入动词（如：s'asseoir, peindre）"
                    class="flex-grow text-sm px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none bg-gray-50/80">
-            <button @click="addVerb" class="px-4 md:px-5 py-2.5 bg-gray-900 text白 rounded-xl text-sm font-medium hover:bg黑 transition whitespace-nowrap">
+            <button @click="addVerb" class="px-4 md:px-5 py-2.5 bg-gray-900 text白 rounded-xl text-sm font-medium hover:bg-black transition whitespace-nowrap">
               添加到 {{ currentGroup }}
             </button>
           </div>
@@ -229,7 +229,7 @@
 
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-6">
           <div v-for="(v, idx) in groupVerbs" :key="v"
-               class="bg白 backdrop-blur border border-gray-100 hover:border-emerald-200 p-3 rounded-2xl shadow-sm hover:shadow-md transition-all">
+               class="bg-white backdrop-blur border border-gray-100 hover:border-emerald-200 p-3 rounded-2xl shadow-sm hover:shadow-md transition-all">
             <div class="flex items-center justify-between gap-2">
               <button class="flex-1 text-left" @click="showConjugationTable(v)">
                 <span class="block font-semibold text-gray-800 text-sm truncate">{{ v }}</span>
@@ -263,7 +263,7 @@
 
       <!-- 练习 -->
       <div v-if="currentView==='practice'" class="max-w-3xl mx-auto">
-        <div v-if="!isPracticeActive" class="bg白 backdrop-blur rounded-2xl shadow-sm border border-emerald-50 mt-10 p-6 md:p-8">
+        <div v-if="!isPracticeActive" class="bg-white backdrop-blur rounded-2xl shadow-sm border border-emerald-50 mt-10 p-6 md:p-8">
           <div class="flex items-center justify-between mb-6">
             <div>
               <h2 class="text-xl font-semibold text-gray-900 tracking-tight">生成练习配置</h2>
@@ -275,13 +275,13 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1.5">语言水平（CEFR）</label>
-              <select v-model="settings.level" class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg灰-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
+              <select v-model="settings.level" class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
                 <option v-for="l in ['A1','A2','B1','B2','C1','C2']" :value="l">{{ l }}</option>
               </select>
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1.5">练习时态</label>
-              <select v-model="settings.tense" class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg灰-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
+              <select v-model="settings.tense" class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
                 <option value="Présent">Présent（现在时）</option>
                 <option value="Passé Composé">Passé Composé（复合过去）</option>
                 <option value="Imparfait">Imparfait（未完成过去）</option>
@@ -299,7 +299,7 @@
             </div>
             <div v-if="settings.mode==='group'">
               <label class="block text-xs font-medium text-gray-500 mb-1.5">选择分组</label>
-              <select v-model="settings.groupName" class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg灰-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
+              <select v-model="settings.groupName" class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
                 <option v-for="g in groupNames" :key="g" :value="g">{{ g }}（{{ groups[g].length }} 词）</option>
               </select>
               <p class="text-[11px] text-gray-400 mt-1">总题数 = 该分组词数 × 6</p>
@@ -307,14 +307,14 @@
             <div v-if="settings.mode==='all'">
               <label class="block text-xs font-medium text-gray-500 mb-1.5">随机抽取动词数量</label>
               <input type="number" min="1" :max="allVerbs.length" v-model.number="settings.count"
-                     class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg灰-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
+                     class="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50/80 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 outline-none">
               <p class="text-[11px] text-gray-400 mt-1">总题数 = 数量 × 6</p>
             </div>
           </div>
 
           <button @click="startPracticeSession" :disabled="!activeApiKey"
                   class="w-full py-3 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center gap-2"
-                  :class="activeApiKey?'bg-emerald-600 text白 hover:bg-emerald-700':'bg灰-200 text灰-500 cursor-not-allowed'">
+                  :class="activeApiKey?'bg-emerald-600 text白 hover:bg-emerald-700':'bg-gray-200 text-gray-500 cursor-not-allowed'">
             <i class="fas fa-magic text-xs" v-if="activeApiKey"></i>
             <span>{{ activeApiKey?'生成题目（调用 AI）':'请先在“设置”中输入 API Key' }}</span>
           </button>
@@ -322,7 +322,7 @@
 
         <!-- 练习卡片 -->
         <div v-else class="flex flex-col justify-center mt-6 mb-8">
-          <div class="bg白 backdrop-blur rounded-2xl shadow-lg border border-emerald-50 p-6 md:p-8 relative min-h-[360px] flex flex-col justify-between">
+          <div class="bg-white backdrop-blur rounded-2xl shadow-lg border border-emerald-50 p-6 md:p-8 relative min-h-[360px] flex flex-col justify-between">
             <div class="flex justify-between text-xs text灰-400 mb-6 border-b border灰-100 pb-2">
               <span class="inline-flex items-center gap-2">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -340,13 +340,13 @@
                        :class="{
                          'border-emerald-500 bg-emerald-50 text-emerald-700': feedback.status==='correct',
                          'border-red-500 bg-red-50 text-red-600': feedback.status==='wrong',
-                         'border灰-300 bg灰-50/80': feedback.status==='neutral'
+                         'border灰-300 bg-gray-50/80': feedback.status==='neutral'
                        }"
                        class="border-b-2 outline-none text-center mx-1 w-40 px-1 font-mono font-semibold bg-transparent transition-all text-base md:text-lg py-0.5"
                        autocomplete="off" inputmode="latin">
                 <span v-html="currentCard.suffix"></span>
               </div>
-              <div class="inline-flex items-center gap-2 text灰-500 italic text-[13px] mt-2 bg灰-50/80 px-3 py-2 rounded-full">
+              <div class="inline-flex items-center gap-2 text灰-500 italic text-[13px] mt-2 bg-gray-50/80 px-3 py-2 rounded-full">
                 <i class="fas fa-language text-xs text灰-400"></i><span>"{{ currentCard.translation }}"</span>
               </div>
             </div>
@@ -358,11 +358,11 @@
             </div>
 
             <div class="mt-4 flex flex-col sm:flex-row gap-3">
-              <button v-if="feedback.status!=='correct'" @click="checkAnswer" class="flex-1 bg灰-900 text白 py-2.5 rounded-xl shadow-sm hover:bg黑 text-sm font-medium transition">提交答案</button>
+              <button v-if="feedback.status!=='correct'" @click="checkAnswer" class="flex-1 bg-gray-900 text白 py-2.5 rounded-xl shadow-sm hover:bg-black text-sm font-medium transition">提交答案</button>
               <button v-else class="flex-1 bg-emerald-500 text白 py-2.5 rounded-xl text-sm font-medium cursor-wait opacity-80 flex items-center justify-center gap-2">
                 <span class="w-3 h-3 border-2 border白/40 border-t白 rounded-full animate-spin"></span><span>加载下一题...</span>
               </button>
-              <button @click="endPractice" class="sm:w-28 py-2.5 rounded-xl border border灰-200 text-xs text灰-500 hover:border灰-300 hover:bg灰-50 flex items-center justify-center gap-1 transition">
+              <button @click="endPractice" class="sm:w-28 py-2.5 rounded-xl border border灰-200 text-xs text灰-500 hover:border灰-300 hover:bg-gray-50 flex items-center justify-center gap-1 transition">
                 <i class="fas fa-xmark text-xs"></i><span>结束练习</span>
               </button>
             </div>
@@ -374,9 +374,9 @@
   </main>
 
   <!-- 变位表模态框 -->
-  <div v-if="showModal" class="fixed inset-0 bg黑/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" @click.self="showModal=false">
-    <div class="bg白 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border border灰-100">
-      <div class="p-4 border-b border灰-100 flex justify-between items-center bg灰-50/80 rounded-t-2xl">
+  <div v-if="showModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" @click.self="showModal=false">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border border灰-100">
+      <div class="p-4 border-b border灰-100 flex justify-between items-center bg-gray-50/80 rounded-t-2xl">
         <div class="flex flex-col">
           <h3 class="text-lg font-semibold text灰-900">变位表 · {{ modalVerb }}</h3>
           <span class="text-[11px] text灰-400 mt-0.5">Présent / Passé Composé / Imparfait / Futur Simple / Subjonctif Présent / Conditionnel Prés现</span>
@@ -388,8 +388,8 @@
   </div>
 
   <!-- 错误提示 -->
-  <div v-if="err.show" class="fixed inset-0 bg黑/30 flex items-center justify-center z-50" @click.self="err.show=false">
-    <div class="bg白 rounded-xl shadow-xl max-w-sm w-[92%] p-5">
+  <div v-if="err.show" class="fixed inset-0 bg-black/30 flex items-center justify-center z-50" @click.self="err.show=false">
+    <div class="bg-white rounded-xl shadow-xl max-w-sm w-[92%] p-5">
       <div class="flex items-start gap-3">
         <div class="text-red-500"><i class="fas fa-triangle-exclamation"></i></div>
         <div class="flex-1">
@@ -398,7 +398,7 @@
         </div>
       </div>
       <div class="mt-4 text-right">
-        <button @click="err.show=false" class="px-4 py-1.5 rounded-md bg灰-900 text白 text-sm">知道了</button>
+        <button @click="err.show=false" class="px-4 py-1.5 rounded-md bg-gray-900 text白 text-sm">知道了</button>
       </div>
     </div>
   </div>
